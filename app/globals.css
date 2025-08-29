@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .input-group {
+    @apply flex flex-col gap-1;
+  }
+  
+  .control-section {
+    @apply bg-white p-4 rounded-lg shadow-sm border border-gray-200;
+  }
+  
+  .slider-container {
+    @apply flex items-center gap-3;
+  }
+  
+  .value-display {
+    @apply text-sm font-mono text-gray-600 min-w-[60px] text-right;
+  }
+}
