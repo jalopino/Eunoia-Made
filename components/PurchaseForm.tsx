@@ -2,8 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { PurchaseForm as PurchaseFormType, KeychainListItem } from '@/types/keychain'
-import { X, Upload, Eye } from 'lucide-react'
-import KeychainViewer from './KeychainViewer'
+import { X, Upload } from 'lucide-react'
 
 interface PurchaseFormProps {
   keychains: KeychainListItem[]
@@ -12,6 +11,32 @@ interface PurchaseFormProps {
 }
 
 export default function PurchaseForm({ keychains, onClose, onSubmit }: PurchaseFormProps) {
+  
+  // Helper function to convert hex colors to readable names
+  const getColorName = (hexColor: string) => {
+    const colorMap: { [key: string]: string } = {
+      '#FFFFFF': 'Cotton White',
+      '#D3D3D3': 'Light Grey',
+      '#000000': 'Black',
+      '#FFB6C1': 'Sakura Pink',
+      '#FFC0CB': 'Pink',
+      '#FF0000': 'Red',
+      '#FFB347': 'Pastel Orange',
+      '#FFFF00': 'Yellow',
+      '#FFFFE0': 'Pastel Yellow',
+      '#98FB98': 'Pale Green',
+      '#98FF98': 'Mint Green',
+      '#006400': 'Dark Green',
+      '#008080': 'Teal',
+      '#ADD8E6': 'Light Blue',
+      '#000080': 'Navy Blue',
+      '#0F52BA': 'Sapphire Blue',
+      '#CCCCFF': 'Periwinkle',
+      '#E6E6FA': 'Lavender'
+    }
+    return colorMap[hexColor] || hexColor
+  }
+  
   const [formData, setFormData] = useState<Omit<PurchaseFormType, 'keychains'>>({
     name: '',
     phone: '',
@@ -19,8 +44,7 @@ export default function PurchaseForm({ keychains, onClose, onSubmit }: PurchaseF
     deliveryType: 'pickup',
     receiptImage: undefined
   })
-  const [selectedKeychain, setSelectedKeychain] = useState<KeychainListItem | null>(null)
-  const [showPreview, setShowPreview] = useState(false)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleInputChange = (field: keyof typeof formData, value: string | File) => {
@@ -186,11 +210,9 @@ export default function PurchaseForm({ keychains, onClose, onSubmit }: PurchaseF
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden">
-                      <img
-                        src={keychain.previewImage}
-                        alt="Keychain preview"
-                        className="w-full h-full object-contain"
-                      />
+                      <div className="text-xs text-gray-600 text-center">
+                        {keychain.parameters.line1?.charAt(0) || 'K'}
+                      </div>
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">
@@ -198,7 +220,7 @@ export default function PurchaseForm({ keychains, onClose, onSubmit }: PurchaseF
                         {keychain.parameters.line2 && ` - ${keychain.parameters.line2}`}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {keychain.parameters.font} • {keychain.parameters.baseColor}
+                        {keychain.parameters.font} • Base: {getColorName(keychain.parameters.baseColor)} • Text: {getColorName(keychain.parameters.textColor)}
                       </p>
                     </div>
                   </div>
@@ -236,33 +258,7 @@ export default function PurchaseForm({ keychains, onClose, onSubmit }: PurchaseF
         </form>
       </div>
 
-      {/* Preview Modal */}
-      {showPreview && selectedKeychain && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Preview: {selectedKeychain.parameters.line1}
-                {selectedKeychain.parameters.line2 && ` - ${selectedKeychain.parameters.line2}`}
-              </h3>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4">
-              <div className="h-96">
-                <KeychainViewer 
-                  parameters={selectedKeychain.parameters} 
-                  commitId={Date.now()} 
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   )
 }

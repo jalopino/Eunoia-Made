@@ -2,13 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Font Face */
+@font-face {
+  font-family: 'RethinkSans';
+  src: url('/fonts/RethinkSans-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   html {
     @apply scroll-smooth;
   }
   
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-transparent text-gray-900;
   }
 }
 

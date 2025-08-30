@@ -1,0 +1,1 @@
+export { exportOBJ } from './objExporter'

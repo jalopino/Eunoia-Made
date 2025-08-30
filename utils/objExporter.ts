@@ -9,6 +9,73 @@ import ClipperLib from 'clipper-lib'
 
 // Advanced mesh repair specifically targeting non-manifold edges
 function repairMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeometry {
+  // For base geometry, use less aggressive repair to preserve shape
+  if (name === 'base') {
+    try {
+      // Convert to non-indexed for processing
+      const nonIndexed = geom.index ? geom.toNonIndexed() : geom.clone()
+      const positions = nonIndexed.getAttribute('position') as THREE.BufferAttribute
+      
+      // Step 1: Remove only very degenerate triangles (much higher tolerance)
+      const goodTriangles: number[] = []
+      const DEGENERATE_TOLERANCE = 0.01 // Higher tolerance for base
+      
+      for (let i = 0; i < positions.count; i += 3) {
+        const ax = positions.getX(i)
+        const ay = positions.getY(i)
+        const az = positions.getZ(i)
+        const bx = positions.getX(i + 1)
+        const by = positions.getY(i + 1)
+        const bz = positions.getZ(i + 1)
+        const cx = positions.getX(i + 2)
+        const cy = positions.getY(i + 2)
+        const cz = positions.getZ(i + 2)
+        
+        // Check if any two vertices are too close
+        const abDist = Math.sqrt((ax-bx)**2 + (ay-by)**2 + (az-bz)**2)
+        const bcDist = Math.sqrt((bx-cx)**2 + (by-cy)**2 + (bz-cz)**2)
+        const caDist = Math.sqrt((cx-ax)**2 + (cy-ay)**2 + (cz-az)**2)
+        
+        if (abDist > DEGENERATE_TOLERANCE && 
+            bcDist > DEGENERATE_TOLERANCE && 
+            caDist > DEGENERATE_TOLERANCE) {
+          goodTriangles.push(i, i+1, i+2)
+        }
+      }
+      
+      // Step 2: Create new geometry with only good triangles
+      const cleaned = new THREE.BufferGeometry()
+      const newPositions = new Float32Array(goodTriangles.length * 3)
+      
+      for (let i = 0; i < goodTriangles.length; i++) {
+        const oldIdx = goodTriangles[i]
+        newPositions[i*3] = positions.getX(oldIdx)
+        newPositions[i*3+1] = positions.getY(oldIdx)
+        newPositions[i*3+2] = positions.getZ(oldIdx)
+      }
+      
+      cleaned.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
+      
+      // Step 3: Gentle vertex welding (less aggressive)
+      const welded = BufferGeometryUtils.mergeVertices(cleaned, 0.001) // Less aggressive welding
+      welded.computeVertexNormals()
+      
+      console.log(`Gentle mesh repair for base:`, {
+        originalVertices: positions.count,
+        originalTriangles: positions.count / 3,
+        cleanedTriangles: goodTriangles.length / 3,
+        weldedVertices: welded.getAttribute('position').count,
+        finalTriangles: welded.getAttribute('position').count / 3
+      })
+      
+      return welded
+    } catch (error) {
+      console.warn(`Base mesh repair failed, using original:`, error)
+      return geom
+    }
+  }
+  
+    // For other geometries (text, ring), use the original aggressive repair
   try {
     // Convert to non-indexed for processing
     const nonIndexed = geom.index ? geom.toNonIndexed() : geom.clone()
@@ -72,7 +139,7 @@ function repairMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeome
     })
     
     return finalGeom
-  } catch (error) {
+    } catch (error) {
     console.warn(`Mesh repair failed for ${name}, using original:`, error)
     return geom
   }
@@ -175,7 +242,7 @@ export async function exportOBJ(parameters: KeychainParameters) {
       })
       g1.computeBoundingBox(); const bb = g1.boundingBox!
       const cx = (bb.min.x + bb.max.x) / 2; const cy = (bb.min.y + bb.max.y) / 2
-      g1.translate(-cx, (parameters.line2 ? spacing/2 : 0) - cy, parameters.borderHeight + 0.15)
+      g1.translate(-cx, (parameters.line2 ? spacing/2 : 0) - cy, parameters.borderHeight)
       textGeoms.push(g1)
     }
     if (line2Shapes.length) {
@@ -186,7 +253,7 @@ export async function exportOBJ(parameters: KeychainParameters) {
       })
       g2.computeBoundingBox(); const bb = g2.boundingBox!
       const cx = (bb.min.x + bb.max.x) / 2; const cy = (bb.min.y + bb.max.y) / 2
-      g2.translate(-cx, -spacing/2 - cy, parameters.borderHeight + 0.15)
+      g2.translate(-cx, -spacing/2 - cy, parameters.borderHeight)
       textGeoms.push(g2)
     }
   }

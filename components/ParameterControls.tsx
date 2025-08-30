@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { KeychainParameters, FontOption, defaultFonts, colorOptions } from '@/types/keychain'
-import { Plus, RotateCcw, X, Type, Palette, Settings, Eye, ListPlus } from 'lucide-react'
-import FontModal from './FontModal'
+import { Plus, RotateCcw, X, Type, Palette, Settings, Eye, ListPlus, Download } from 'lucide-react'
+import { exportOBJ } from '@/utils/export'
 
 
 interface ParameterControlsProps {
@@ -15,6 +15,7 @@ interface ParameterControlsProps {
   keychainList: any[]
   onRemoveKeychain: (id: string) => void
   onPurchase: () => void
+  isGenerating?: boolean
 }
 
 export default function ParameterControls({
@@ -25,11 +26,37 @@ export default function ParameterControls({
   onAddToList,
   keychainList,
   onRemoveKeychain,
-  onPurchase
+  onPurchase,
+  isGenerating = false
 }: ParameterControlsProps) {
+  
+  // Helper function to convert hex colors to readable names
+  const getColorName = (hexColor: string) => {
+    const colorMap: { [key: string]: string } = {
+      '#FFFFFF': 'Cotton White',
+      '#D3D3D3': 'Light Grey',
+      '#000000': 'Black',
+      '#FFB6C1': 'Sakura Pink',
+      '#FFC0CB': 'Pink',
+      '#FF0000': 'Red',
+      '#FFB347': 'Pastel Orange',
+      '#FFFF00': 'Yellow',
+      '#FFFFE0': 'Pastel Yellow',
+      '#98FB98': 'Pale Green',
+      '#98FF98': 'Mint Green',
+      '#006400': 'Dark Green',
+      '#008080': 'Teal',
+      '#ADD8E6': 'Light Blue',
+      '#000080': 'Navy Blue',
+      '#0F52BA': 'Sapphire Blue',
+      '#CCCCFF': 'Periwinkle',
+      '#E6E6FA': 'Lavender Purple'
+    }
+    return colorMap[hexColor] || hexColor
+  }
   const [fonts, setFonts] = useState<FontOption[]>(defaultFonts)
   const [showFontModal, setShowFontModal] = useState(false)
-  const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors'>('text')
+  const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors' | 'export'>('text')
 
   // Auto-detect typeface.json in public/fonts and add to list
   useEffect(() => {
@@ -93,11 +120,12 @@ export default function ParameterControls({
   const tabs = [
     { id: 'text', label: 'Text', icon: Type },
     { id: 'ring', label: 'Ring', icon: Eye },
-    { id: 'colors', label: 'Colors', icon: Palette }
+    { id: 'colors', label: 'Colors', icon: Palette },
+    { id: 'export', label: 'Export', icon: Download }
   ] as const
 
   return (
-    <div className="bg-white h-full flex flex-col">
+    <div className="bg-white flex flex-col">
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 flex-shrink-0">
         {tabs.map((tab) => {
@@ -120,14 +148,19 @@ export default function ParameterControls({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 p-6">
         {/* Generate Button - Always visible at top */}
         <div className="mb-6">
           <button
             onClick={onGenerate}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-medium"
+            disabled={isGenerating}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium ${
+              isGenerating 
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                : 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500'
+            }`}
           >
-            Generate 3D Model
+            {isGenerating ? 'Generating...' : 'Generate KEYGO'}
           </button>
         </div>
 
@@ -200,7 +233,7 @@ export default function ParameterControls({
                   type="range"
                   id="lineSpacing"
                   min="0.8"
-                  max="2"
+                  max="1.3"
                   step="0.1"
                   value={parameters.lineSpacing}
                   onChange={(e) => handleSliderChange('lineSpacing', e.target.value)}
@@ -286,43 +319,81 @@ export default function ParameterControls({
               </label>
             </div>
 
-            <div className="input-group">
-              <label htmlFor="baseColor" className="text-sm font-medium text-gray-700">
-                Base Color:
-              </label>
-              <select
-                id="baseColor"
-                value={parameters.baseColor}
-                onChange={(e) => onParameterChange('baseColor', e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-              >
-                {colorOptions.map((color) => (
-                  <option key={color.value} value={color.value}>
-                    {color.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {parameters.twoColors && (
+            <div className="space-y-4">
               <div className="input-group">
-                <label htmlFor="textColor" className="text-sm font-medium text-gray-700">
-                  Text Color:
+                <label htmlFor="baseColor" className="text-sm font-medium text-gray-700">
+                  Base Color:
                 </label>
-                <select
-                  id="textColor"
-                  value={parameters.textColor}
-                  onChange={(e) => onParameterChange('textColor', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-                >
-                  {colorOptions.map((color) => (
-                    <option key={color.value} value={color.value}>
-                      {color.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-3">
+                  <select
+                    id="baseColor"
+                    value={parameters.baseColor}
+                    onChange={(e) => onParameterChange('baseColor', e.target.value)}
+                    className="mt-1 block flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
+                  >
+                    {colorOptions.map((color) => (
+                      <option key={color.value} value={color.value}>
+                        {color.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div 
+                    className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm mt-1"
+                    style={{ backgroundColor: parameters.baseColor }}
+                  />
+                </div>
               </div>
-            )}
+
+              {parameters.twoColors && (
+                <div className="input-group">
+                  <label htmlFor="textColor" className="text-sm font-medium text-gray-700">
+                    Text Color:
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <select
+                      id="textColor"
+                      value={parameters.textColor}
+                      onChange={(e) => onParameterChange('textColor', e.target.value)}
+                      className="mt-1 block flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
+                    >
+                      {colorOptions.map((color) => (
+                        <option key={color.value} value={color.value}>
+                          {color.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div 
+                      className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm mt-1"
+                      style={{ backgroundColor: parameters.textColor }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Export Tab */}
+        {activeTab === 'export' && (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600 mb-4">
+              Export your keychain design in different formats for 3D printing or further editing.
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => exportOBJ(parameters)}
+                disabled={isGenerating}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium ${
+                  isGenerating 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                }`}
+              >
+                <Download className="w-4 h-4" />
+                Export as OBJ
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -332,15 +403,25 @@ export default function ParameterControls({
         <div className="space-y-4">
           <button
             onClick={onAddToList}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-medium"
+            disabled={isGenerating}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium ${
+              isGenerating 
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                : 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500'
+            }`}
           >
             <ListPlus className="w-5 h-5" />
-            Add Keychain to List
+            Add Keychain to Cart
           </button>
           
           <button
             onClick={onReset}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium"
+            disabled={isGenerating}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium ${
+              isGenerating 
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                : 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500'
+            }`}
           >
             <RotateCcw className="w-5 h-5" />
             Reset to Defaults
@@ -356,7 +437,12 @@ export default function ParameterControls({
               </h4>
               <button
                 onClick={onPurchase}
-                className="px-3 py-1 text-xs bg-primary-500 text-white rounded-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                disabled={isGenerating}
+                className={`px-3 py-1 text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  isGenerating 
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                    : 'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500'
+                }`}
               >
                 Buy All
               </button>
@@ -369,14 +455,13 @@ export default function ParameterControls({
                   className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm"
                 >
                   <div className="flex items-start gap-3">
-                    {/* Preview Image */}
-                    <div className="flex-shrink-0">
-                      <img
-                        src={keychain.previewImage}
-                        alt="Keychain preview"
-                        className="w-16 h-12 object-contain bg-white rounded border border-gray-200"
-                      />
-                    </div>
+                    {/* Gradient Preview */}
+                    <div 
+                      className="w-8 h-8 rounded-lg shadow-sm flex-shrink-0"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${keychain.parameters.baseColor} 0%, ${keychain.parameters.textColor} 100%)`
+                      }}
+                    />
                     
                     {/* Keychain Details */}
                     <div className="flex-1 min-w-0">
@@ -387,7 +472,12 @@ export default function ParameterControls({
                         </span>
                         <button
                           onClick={() => onRemoveKeychain(keychain.id)}
-                          className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
+                          disabled={isGenerating}
+                          className={`p-1 flex-shrink-0 ${
+                            isGenerating 
+                              ? 'text-gray-400 cursor-not-allowed' 
+                              : 'text-red-500 hover:text-red-700'
+                          }`}
                           title="Remove keychain"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -399,6 +489,10 @@ export default function ParameterControls({
                         <span className="font-medium">Font:</span> {keychain.parameters.font} • 
                         <span className="font-medium ml-1">Ring:</span> {keychain.parameters.showRing ? 'Yes' : 'No'}
                       </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        <span className="font-medium">Base:</span> {getColorName(keychain.parameters.baseColor)} • 
+                        <span className="font-medium ml-1">Text:</span> {getColorName(keychain.parameters.textColor)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -407,14 +501,6 @@ export default function ParameterControls({
           </div>
         )}
       </div>
-
-      {/* Font Modal */}
-      {showFontModal && (
-        <FontModal
-          onClose={() => setShowFontModal(false)}
-          onAddFont={handleAddFont}
-        />
-      )}
     </div>
   )
 }

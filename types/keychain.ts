@@ -30,8 +30,8 @@ export const defaultParameters: KeychainParameters = {
   // Text settings
   line1: 'Eunoia',
   line2: 'Made',
-  font: 'Arial',
-  fontUrl: '',
+  font: 'Britanica',
+  fontUrl: '/fonts/Britanica.typeface.json',
   textHeight: 1.5,
   textSize: 12,
   lineSpacing: 1.2,
@@ -51,7 +51,7 @@ export const defaultParameters: KeychainParameters = {
   // Color settings
   twoColors: true,
   baseColor: '#000000',
-  textColor: '#00FF00'
+  textColor: '#FFFFFF'
 }
 
 export interface FontOption {
@@ -62,24 +62,16 @@ export interface FontOption {
 }
 
 export const defaultFonts: FontOption[] = [
-  { name: 'Arial', value: 'Arial' },
-  { name: 'Helvetica', value: 'Helvetica' },
-  { name: 'Times New Roman', value: 'Times' },
-  { name: 'Courier New', value: 'Courier' },
-  { name: 'Georgia', value: 'Georgia' },
-  { name: 'Verdana', value: 'Verdana' },
-  { name: 'Impact', value: 'Impact' },
-  { name: 'Comic Sans MS', value: 'Comic Sans MS' },
-  { name: 'Archivo Black', value: 'Archivo Black', googleFont: true },
-  { name: 'Bangers', value: 'Bangers', googleFont: true },
-  { name: 'Bungee', value: 'Bungee', googleFont: true },
-  { name: 'Changa One', value: 'Changa One', googleFont: true },
-  { name: 'Bebas Neue', value: 'Bebas Neue', googleFont: true },
-  { name: 'Poppins Black', value: 'Poppins', googleFont: true },
-  { name: 'Pacifico', value: 'Pacifico', googleFont: true },
-  { name: 'Press Start 2P', value: 'Press Start 2P', googleFont: true },
-  { name: 'Audiowide', value: 'Audiowide', googleFont: true },
-  { name: 'DynaPuff', value: 'DynaPuff', googleFont: true }
+  { name: 'Britanica', value: 'Britanica', fileUrl: '/fonts/Britanica.typeface.json' },
+  { name: 'Changa One', value: 'ChangaOne', fileUrl: '/fonts/ChangaOne.typeface.json' },
+  { name: 'Pacifico', value: 'Pacifico', fileUrl: '/fonts/Pacifico.typeface.json' },
+  { name: 'Bungee', value: 'Bungee', fileUrl: '/fonts/Bungee.typeface.json' },
+  { name: 'Poppins', value: 'Poppins', fileUrl: '/fonts/Poppins.typeface.json' },
+  { name: 'DynaPuff', value: 'DynaPuff', fileUrl: '/fonts/DynaPuff.typeface.json' },
+  { name: 'Bangers', value: 'Bangers', fileUrl: '/fonts/Bangers.typeface.json' },
+  { name: 'Audiowide', value: 'Audiowide', fileUrl: '/fonts/Audiowide.typeface.json' },
+  { name: 'Archivo', value: 'Archivo', fileUrl: '/fonts/Archivo.typeface.json' },
+  { name: 'Borel', value: 'Borel', fileUrl: '/fonts/Borel.typeface.json' }
 ]
 
 export interface ColorOption {
@@ -88,28 +80,30 @@ export interface ColorOption {
 }
 
 export const colorOptions: ColorOption[] = [
+  { name: 'Cotton White', value: '#FFFFFF' },
+  { name: 'Light Grey', value: '#D3D3D3' },
   { name: 'Black', value: '#000000' },
+  { name: 'Sakura Pink', value: '#FFB6C1' },
+  { name: 'Pink', value: '#FFC0CB' },
   { name: 'Red', value: '#FF0000' },
-  { name: 'Dark Red', value: '#990000' },
-  { name: 'Green', value: '#00FF00' },
-  { name: 'Dark Green', value: '#009900' },
-  { name: 'Blue', value: '#0000FF' },
-  { name: 'Dark Blue', value: '#000099' },
+  { name: 'Pastel Orange', value: '#FFB347' },
   { name: 'Yellow', value: '#FFFF00' },
-  { name: 'Orange', value: '#FF8000' },
-  { name: 'Purple', value: '#800080' },
-  { name: 'Pink', value: '#FF66B3' },
-  { name: 'White', value: '#FFFFFF' },
-  { name: 'Light Gray', value: '#CCCCCC' },
-  { name: 'Dark Gray', value: '#4D4D4D' },
-  { name: 'Turquoise', value: '#00CCCC' }
+  { name: 'Pastel Yellow', value: '#FFFFE0' },
+  { name: 'Pale Green', value: '#98FB98' },
+  { name: 'Mint Green', value: '#98FF98' },
+  { name: 'Dark Green', value: '#006400' },
+  { name: 'Teal', value: '#008080' },
+  { name: 'Light Blue', value: '#ADD8E6' },
+  { name: 'Navy Blue', value: '#000080' },
+  { name: 'Sapphire Blue', value: '#0F52BA' },
+  { name: 'Periwinkle', value: '#CCCCFF' },
+  { name: 'Lavender Purple', value: '#967bb6' }
 ]
 
 export interface KeychainListItem {
   id: string
   parameters: KeychainParameters
-  previewImage: string
-  addedAt: Date
+  addedAt: string
 }
 
 export interface PurchaseForm {

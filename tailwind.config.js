@@ -8,12 +8,23 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#eff6ff',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
+        brand: {
+          blue: '#1E3C96',
+          green: '#008242',
+          yellow: '#FFB81C',
+          red: '#E31837',
+          black: '#000000',
+          white: '#FFFFFF',
         },
+        primary: {
+          50: '#F5F7FC',
+          500: '#1E3C96', // Brand blue
+          600: '#182D71', // Darker
+          700: '#121F4C', // Even darker
+        },
+      },
+      fontFamily: {
+        'rethink': ['RethinkSans', 'sans-serif'],
       },
     },
   },

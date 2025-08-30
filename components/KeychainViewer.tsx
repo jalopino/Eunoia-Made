@@ -444,7 +444,12 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
     <group ref={meshRef}>
       {/* Base with proper border around text */}
       <mesh geometry={baseGeomState || baseGeometry} position={[0, 0, 0]}>
-        <meshStandardMaterial color={baseColor} />
+      <meshStandardMaterial 
+          color={baseColor} 
+          roughness={0.2}
+          metalness={0.1}
+          envMapIntensity={0.8}
+        />
       </mesh>
 
       {/* Raised or engraved 3D text from glyphs */}
@@ -495,10 +500,49 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
 function Scene({ parameters, onBuildingChange }: { parameters: KeychainParameters, onBuildingChange: (v: boolean) => void }) {
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[10, 10, 5]} intensity={0.8} />
-      <pointLight position={[-10, -10, -5]} intensity={0.4} />
+      {/* Enhanced Table Lighting */}
+      {/* Main ambient light for overall illumination */}
+      <ambientLight intensity={0.7} color="#ffffff" />
+      
+      {/* Warm ambient fill light for table warmth */}
+      <ambientLight intensity={0.3} color="#fff8e1" />
+      
+      {/* Main directional light from top-right */}
+      <directionalLight 
+        position={[15, 20, 10]} 
+        intensity={1.0} 
+        color="#ffffff"
+        castShadow
+      />
+      
+      {/* Secondary directional light from top-left */}
+      <directionalLight 
+        position={[-15, 20, 10]} 
+        intensity={0.6} 
+        color="#ffffff"
+      />
+      
+      {/* Rim lighting from behind for edge definition */}
+      <directionalLight 
+        position={[0, 10, -15]} 
+        intensity={0.5} 
+        color="#e3f2fd"
+      />
+      
+      {/* Fill light from bottom for table underside */}
+      <directionalLight 
+        position={[0, -15, 5]} 
+        intensity={0.3} 
+        color="#f3e5f5"
+      />
+      
+      {/* Accent point light for keychain highlights */}
+      <pointLight 
+        position={[8, 15, 8]} 
+        intensity={0.5} 
+        color="#fff3e0"
+        distance={50}
+      />
 
       {/* Bed Grid at Z=0 */}
       <gridHelper args={[200, 40, '#e0e0e0', '#f0f0f0']} position={[0, 0, 0]} />
@@ -543,8 +587,8 @@ export default function KeychainViewer({ parameters, commitId = 0 }: KeychainVie
       </div>
       
       <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-        <p className="text-sm text-gray-600 text-center">
-          Use mouse to rotate, zoom, and pan the 3D model
+        <p className="text-sm text-gray-600 text-center font-bold">
+          Click and drag to rotate, zoom, and pan the 3D model
         </p>
       </div>
     </div>
