@@ -154,3 +154,4 @@ This project is open source. Feel free to modify and distribute.
 ## Contributing
 
 Feel free to submit issues, feature requests, or pull requests to improve this tool.
+# Eunoia-Made
