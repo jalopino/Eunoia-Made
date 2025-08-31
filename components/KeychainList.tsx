@@ -83,7 +83,7 @@ export default function KeychainList({ keychains, onRemoveKeychain, onPurchase }
                 </div>
                 
                 <p className="text-xs text-gray-400 mt-2">
-                  Added {keychain.addedAt.toLocaleDateString()}
+                  Added {keychain.addedAt.split('T')[0]}
                 </p>
               </div>
               
