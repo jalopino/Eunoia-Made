@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { KeychainParameters, FontOption, defaultFonts, colorOptions } from '@/types/keychain'
-import { Plus, RotateCcw, X, Type, Palette, Settings, Eye, ListPlus, Download } from 'lucide-react'
-import { exportOBJ } from '@/utils/export'
+import { RotateCcw, X, Type, Palette, Eye, ListPlus } from 'lucide-react'
 
 
 interface ParameterControlsProps {
@@ -54,9 +53,8 @@ export default function ParameterControls({
     }
     return colorMap[hexColor] || hexColor
   }
-  const [fonts, setFonts] = useState<FontOption[]>(defaultFonts)
-  const [showFontModal, setShowFontModal] = useState(false)
-  const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors' | 'export'>('text')
+  const [fonts] = useState<FontOption[]>(defaultFonts)
+  const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors'>('text')
 
   // Auto-detect typeface.json in public/fonts and add to list
   useEffect(() => {
@@ -66,16 +64,7 @@ export default function ParameterControls({
       .then((data) => {
         if (ignore) return
         if (data?.fonts?.length) {
-          const autoFonts: FontOption[] = data.fonts.map((f: any) => ({
-            name: f.name,
-            value: f.name,
-            fileUrl: f.fileUrl,
-          }))
-          setFonts((prev) => {
-            const map = new Map<string, FontOption>()
-            ;[...prev, ...autoFonts].forEach((f) => map.set(f.name, f))
-            return Array.from(map.values())
-          })
+          // Skip auto-detection since we're using defaultFonts
         }
       })
       .catch(() => {})
@@ -88,14 +77,7 @@ export default function ParameterControls({
     onParameterChange(key, parseFloat(value))
   }
 
-  const handleAddFont = (newFont: FontOption) => {
-    setFonts(prev => [...prev, newFont])
-    // Set display font name and fontUrl if a file URL was provided
-    onParameterChange('font', newFont.name)
-    const url = newFont.fileUrl || newFont.value
-    if (url && /\.typeface\.json$/i.test(url)) onParameterChange('fontUrl', url)
-    setShowFontModal(false)
-  }
+
 
   const handleFontSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value
@@ -120,8 +102,7 @@ export default function ParameterControls({
   const tabs = [
     { id: 'text', label: 'Text', icon: Type },
     { id: 'ring', label: 'Ring', icon: Eye },
-    { id: 'colors', label: 'Colors', icon: Palette },
-    { id: 'export', label: 'Export', icon: Download }
+    { id: 'colors', label: 'Colors', icon: Palette }
   ] as const
 
   return (
@@ -171,57 +152,69 @@ export default function ParameterControls({
               <label htmlFor="line1" className="text-sm font-medium text-gray-700">
                 First Line:
               </label>
-              <input
-                type="text"
-                id="line1"
-                value={parameters.line1}
-                onChange={(e) => onParameterChange('line1', e.target.value)}
-                maxLength={20}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  id="line1"
+                  value={parameters.line1}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    if ((newValue.length + (parameters.line2?.length || 0)) <= 12) {
+                      onParameterChange('line1', newValue);
+                    }
+                  }}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
+                />
+                <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                  {parameters.line1.length}/{12 - (parameters.line2?.length || 0)}
+                </span>
+              </div>
             </div>
 
             <div className="input-group">
               <label htmlFor="line2" className="text-sm font-medium text-gray-700">
                 Second Line (Optional):
               </label>
-              <input
-                type="text"
-                id="line2"
-                value={parameters.line2}
-                onChange={(e) => onParameterChange('line2', e.target.value)}
-                maxLength={20}
-                placeholder="Leave empty for single line"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  id="line2"
+                  value={parameters.line2}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    // Only allow input if first line has content
+                    if (parameters.line1.length > 0 && (newValue.length + parameters.line1.length) <= 12) {
+                      onParameterChange('line2', newValue);
+                    }
+                  }}
+                  placeholder={parameters.line1.length === 0 ? "First line required" : ""}
+                  disabled={parameters.line1.length === 0}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
+                />
+                <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                  {parameters.line2?.length || 0}/{12 - parameters.line1.length}
+                </span>
+              </div>
             </div>
 
             <div className="input-group">
               <label htmlFor="font" className="text-sm font-medium text-gray-700">
                 Font:
               </label>
-              <div className="flex gap-2">
-                <select
-                  id="font"
-                  value={parameters.font}
-                  onChange={handleFontSelect}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-                >
-                  {fonts
-                    .filter((f) => f.fileUrl?.toLowerCase().endsWith('.typeface.json'))
-                    .map((font) => (
-                      <option key={font.value} value={font.value}>
-                        {font.name}
-                      </option>
-                    ))}
-                </select>
-                <button
-                  onClick={() => setShowFontModal(true)}
-                  className="mt-1 px-3 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+              <select
+                id="font"
+                value={parameters.font}
+                onChange={handleFontSelect}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
+              >
+                {fonts
+                  .filter((f) => f.fileUrl?.toLowerCase().endsWith('.typeface.json'))
+                  .map((font) => (
+                    <option key={font.value} value={font.value}>
+                      {font.name}
+                    </option>
+                  ))}
+              </select>
             </div>
 
             <div className="input-group">
@@ -249,58 +242,42 @@ export default function ParameterControls({
         {activeTab === 'ring' && (
           <div className="space-y-4">
             <div className="input-group">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={parameters.showRing}
-                  onChange={(e) => onParameterChange('showRing', e.target.checked)}
-                  className="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                />
-                <span className="ml-2 text-sm font-medium text-gray-700">Show Ring</span>
+              <label htmlFor="ringX" className="text-sm font-medium text-gray-700">
+                X Position:
               </label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  id="ringX"
+                  min="-10"
+                  max="10"
+                  step="0.5"
+                  value={parameters.ringX}
+                  onChange={(e) => handleSliderChange('ringX', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="value-display">{parameters.ringX}mm</span>
+              </div>
             </div>
 
-            {parameters.showRing && (
-              <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                <div className="input-group">
-                  <label htmlFor="ringX" className="text-sm font-medium text-gray-700">
-                    X Position:
-                  </label>
-                  <div className="slider-container">
-                    <input
-                      type="range"
-                      id="ringX"
-                      min="-10"
-                      max="10"
-                      step="0.5"
-                      value={parameters.ringX}
-                      onChange={(e) => handleSliderChange('ringX', e.target.value)}
-                      className="flex-1"
-                    />
-                    <span className="value-display">{parameters.ringX}mm</span>
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="ringY" className="text-sm font-medium text-gray-700">
-                    Y Position:
-                  </label>
-                  <div className="slider-container">
-                    <input
-                      type="range"
-                      id="ringY"
-                      min="-10"
-                      max="10"
-                      step="0.5"
-                      value={parameters.ringY}
-                      onChange={(e) => handleSliderChange('ringY', e.target.value)}
-                      className="flex-1"
-                    />
-                    <span className="value-display">{parameters.ringY}mm</span>
-                  </div>
-                </div>
+            <div className="input-group">
+              <label htmlFor="ringY" className="text-sm font-medium text-gray-700">
+                Y Position:
+              </label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  id="ringY"
+                  min="-10"
+                  max="10"
+                  step="0.5"
+                  value={parameters.ringY}
+                  onChange={(e) => handleSliderChange('ringY', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="value-display">{parameters.ringY}mm</span>
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -373,29 +350,7 @@ export default function ParameterControls({
           </div>
         )}
 
-        {/* Export Tab */}
-        {activeTab === 'export' && (
-          <div className="space-y-4">
-            <div className="text-sm text-gray-600 mb-4">
-              Export your keychain design in different formats for 3D printing or further editing.
-            </div>
-            
-            <div className="space-y-3">
-              <button
-                onClick={() => exportOBJ(parameters)}
-                disabled={isGenerating}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium ${
-                  isGenerating 
-                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                    : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
-                }`}
-              >
-                <Download className="w-4 h-4" />
-                Export as OBJ
-              </button>
-            </div>
-          </div>
-        )}
+
       </div>
 
       {/* Add to List Section - Always visible at bottom */}
@@ -444,11 +399,11 @@ export default function ParameterControls({
                     : 'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500'
                 }`}
               >
-                Buy All
+                Checkout
               </button>
             </div>
             
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 min-h-fit overflow-y-auto">
               {keychainList.map((keychain) => (
                 <div
                   key={keychain.id}
@@ -486,8 +441,7 @@ export default function ParameterControls({
                         </button>
                       </div>
                       <div className="text-xs text-gray-600">
-                        <span className="font-medium">Font:</span> {keychain.parameters.font} • 
-                        <span className="font-medium ml-1">Ring:</span> {keychain.parameters.showRing ? 'Yes' : 'No'}
+                        <span className="font-medium">Font:</span> {keychain.parameters.font}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
                         <span className="font-medium">Base:</span> {getColorName(keychain.parameters.baseColor)} • 

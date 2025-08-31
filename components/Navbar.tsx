@@ -10,11 +10,11 @@ export default function Navbar() {
   const pathname = usePathname()
 
   const navItems = [
-    { name: 'Home', href: '/' },
+    //{ name: 'Home', href: '/' },
     { name: 'KEYGO Maker', href: '/keygo' },
-    { name: 'Shop', href: '/shop' },
-    { name: 'About', href: '/about' },
-    { name: 'Contact', href: '/contact' },
+    //{ name: 'Shop', href: '/shop' },
+    //{ name: 'About', href: '/about' },
+    //{ name: 'Contact', href: '/contact' },
   ]
 
   const isActive = (path: string) => pathname === path
@@ -24,10 +24,12 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          {/* <Link href="/" className="flex items-center">
             <img src="/EUNOIA LOGO.png" alt="Eunoia Made" className="h-8" />
-          </Link>
-
+          </Link> */}
+          <button className="flex items-center">
+            <img src="/EUNOIA LOGO.png" alt="Eunoia Made" className="h-8" />
+          </button>
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (

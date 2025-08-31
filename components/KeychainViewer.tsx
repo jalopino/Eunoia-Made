@@ -580,7 +580,7 @@ export default function KeychainViewer({ parameters, commitId = 0 }: KeychainVie
   }, [])
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-full">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-fit">
       <div className={`relative h-[calc(100vh-200px)] min-h-[400px] transition-filter duration-150 ${isBuilding ? '' : ''}`}>
         <Canvas
           key={commitId}

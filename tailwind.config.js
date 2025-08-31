@@ -9,11 +9,16 @@ module.exports = {
     extend: {
       animation: {
         'gradient': 'gradient 2s linear infinite',
+        'fade-in': 'fadeIn 0.3s ease-in-out',
       },
       keyframes: {
         gradient: {
           '0%': { 'background-position': '0% 50%' },
           '100%': { 'background-position': '300% 50%' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
       },
       colors: {

@@ -349,15 +349,11 @@ export async function exportOBJ(parameters: KeychainParameters) {
   ]
 
   const { obj, mtl } = await buildOBJWithMTL(partsForExport)
-  const zip = new (await import('jszip')).default()
-  zip.file('keychain.obj', obj)
-  zip.file('keychain.mtl', mtl)
-  const blob = await zip.generateAsync({ type:'blob' })
-  saveAs(blob, `keychain_${parameters.line1 || 'model'}.zip`)
+  return { obj, mtl }
 }
 
-async function buildOBJWithMTL(parts:{name:string,geom:THREE.BufferGeometry,color:string}[]) {
-  let obj = 'mtllib keychain.mtl\n'
+async function buildOBJWithMTL(parts:{name:string,geom:THREE.BufferGeometry,color:string}[], mtlFileName = 'keychain.mtl') {
+  let obj = `mtllib ${mtlFileName}\n`
   let mtl = ''
   const norm = (c:string)=> c && c.startsWith('#') ? c : '#000000'
   const hexToRgb = (h:string)=>({ r:parseInt(h.slice(1,3),16)/255, g:parseInt(h.slice(3,5),16)/255, b:parseInt(h.slice(5,7),16)/255 })
