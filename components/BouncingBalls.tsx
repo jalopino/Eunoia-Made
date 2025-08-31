@@ -1,26 +1,37 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import LoadingOverlay from './LoadingOverlay'
 import * as THREE from 'three'
 
 export default function BouncingBalls() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [progress, setProgress] = useState(0)
   
   useEffect(() => {
     if (!containerRef.current) return
 
+    // Start with scene setup progress
+    setProgress(10)
+
     // Scene setup
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
+    setProgress(20)
+    
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true,
       alpha: true 
     })
+    setProgress(30)
     
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setClearColor(0x000000, 0) // Transparent background
     containerRef.current.appendChild(renderer.domElement)
 
+    setProgress(40)
+    
     // Create balls with brand colors
     const balls = [
       // Original balls
@@ -54,6 +65,8 @@ export default function BouncingBalls() {
       scene.add(ball)
       return ball
     })
+
+    setProgress(60)
 
     // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7)
@@ -150,7 +163,14 @@ export default function BouncingBalls() {
       renderer.render(scene, camera)
     }
 
+    setProgress(80)
     animate()
+    
+    // Small delay before removing loading screen to ensure everything is rendered
+    setTimeout(() => {
+      setProgress(100)
+      setIsLoading(false)
+    }, 500)
 
     // Cleanup
     return () => {
@@ -168,14 +188,17 @@ export default function BouncingBalls() {
   }, [])
 
   return (
-    <div 
-      ref={containerRef} 
-      className="absolute inset-0 pointer-events-none -z-10"
-      style={{ 
-        opacity: 0.2,
-        background: 'transparent',
-        mixBlendMode: 'normal'
-      }}
-    />
+    <>
+      <div 
+        ref={containerRef} 
+        className="absolute inset-0 pointer-events-none -z-10"
+        style={{ 
+          opacity: 0.2,
+          background: 'transparent',
+          mixBlendMode: 'normal'
+        }}
+      />
+      <LoadingOverlay isLoading={isLoading} progress={progress} />
+    </>
   )
 }

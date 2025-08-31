@@ -3,6 +3,7 @@
 import { useRef, useMemo, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Center, Text, Text3D } from '@react-three/drei'
+import LoadingOverlay from './LoadingOverlay'
 import * as THREE from 'three'
 import { KeychainParameters } from '@/types/keychain'
 import { TTFLoader } from 'three-stdlib'
@@ -14,7 +15,7 @@ interface KeychainViewerProps {
   commitId?: number
 }
 
-function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainParameters, onBuildingChange: (v: boolean) => void }) {
+function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { parameters: KeychainParameters, onBuildingChange: (v: boolean) => void, onProgressChange: (v: number) => void }) {
   const meshRef = useRef<THREE.Group>(null)
   const [line1Bounds, setLine1Bounds] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
   const [line2Bounds, setLine2Bounds] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
@@ -181,6 +182,7 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
     async function buildGlyphBase() {
       try {
         onBuildingChange(true)
+        onProgressChange(10) // Start from 10% since scene is initialized
         const { FontLoader } = await import('three/examples/jsm/loaders/FontLoader.js')
         let font: any
         const url = parameters.fontUrl?.toLowerCase()
@@ -190,10 +192,13 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
             // Load pre-generated typeface JSON directly
             const json = await fetch(parameters.fontUrl!).then(r => r.json())
             font = fl.parse(json)
+            onProgressChange(20)
           } else if (/\.(ttf|otf)$/i.test(url)) {
             // Load TTF/OTF, then parse to font
             const ttfJson = await new TTFLoader().loadAsync(parameters.fontUrl!)
+            onProgressChange(20)
             font = fl.parse(ttfJson)
+            onProgressChange(30)
           } else {
             // Unknown format: fallback to bundled helvetiker
             // Try first detected typeface.json via API; otherwise abort without fetching
@@ -251,8 +256,10 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
         // Generate shapes for lines (no in-place translate on shapes)
         const size = parameters.textSize
         const spacing = parameters.textSize * parameters.lineSpacing
+        onProgressChange(40)
         const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, size) : []
         const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, size) : []
+        onProgressChange(50)
 
         // Build 3D text geometry per line and apply offsets on the geometry
         const textLineGeoms: THREE.BufferGeometry[] = []
@@ -329,6 +336,7 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
         }
 
         // Build base by offsetting glyph outlines so it hugs the text (Minkowski-like)
+        onProgressChange(70)
         const { default: ClipperLib } = await import('clipper-lib')
 
         // Union all contours first so we have a single filled area of the text
@@ -383,7 +391,10 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
           const firstLineY = parameters.line2 ? parameters.textSize * parameters.lineSpacing / 2 : 0
           if (!cancelled) setRingPosState([-(baseWidth / 2 + parameters.outerDiameter / 4) + parameters.ringX, firstLineY + parameters.ringY, 0])
         }
-        if (!cancelled) setBaseGeomState(mergedBase)
+        if (!cancelled) {
+          setBaseGeomState(mergedBase)
+          onProgressChange(100)
+        }
       } catch (e) {
         console.error('Glyph base build failed:', e)
         if (!cancelled) {
@@ -497,7 +508,7 @@ function KeychainMesh({ parameters, onBuildingChange }: { parameters: KeychainPa
   )
 }
 
-function Scene({ parameters, onBuildingChange }: { parameters: KeychainParameters, onBuildingChange: (v: boolean) => void }) {
+function Scene({ parameters, onBuildingChange, onProgressChange }: { parameters: KeychainParameters, onBuildingChange: (v: boolean) => void, onProgressChange: (v: number) => void }) {
   return (
     <>
       {/* Enhanced Table Lighting */}
@@ -549,24 +560,37 @@ function Scene({ parameters, onBuildingChange }: { parameters: KeychainParameter
 
       {/* Keychain - XY text on XZ bed; rotate 180° around Z */}
       <group rotation={[-Math.PI / 2, 0, Math.PI]} position={[0, 0.5, 0]}>
-        <KeychainMesh parameters={parameters} onBuildingChange={onBuildingChange} />
+        <KeychainMesh parameters={parameters} onBuildingChange={onBuildingChange} onProgressChange={onProgressChange} />
       </group>
     </>
   )
 }
 
 export default function KeychainViewer({ parameters, commitId = 0 }: KeychainViewerProps) {
-  const [isBuilding, setIsBuilding] = useState(false)
+  const [isBuilding, setIsBuilding] = useState(true) // Start with loading state
+  const [buildProgress, setBuildProgress] = useState(0)
+  const [isSceneReady, setIsSceneReady] = useState(false)
+  // Effect to initialize scene after a short delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsSceneReady(true)
+      setBuildProgress(10) // Initial progress for scene setup
+    }, 100) // Small delay to ensure loading shows first
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-full">
-      <div className={`relative h-[calc(100vh-200px)] min-h-[400px] transition-filter duration-150 ${isBuilding ? 'blur-3xl' : ''}`}>
+      <div className={`relative h-[calc(100vh-200px)] min-h-[400px] transition-filter duration-150 ${isBuilding ? '' : ''}`}>
         <Canvas
           key={commitId}
           camera={{ position: [0, 100, 0], fov: 60 }}
           frameloop={isBuilding ? 'never' : 'always'}
           shadows
         >
-          <Scene parameters={parameters} onBuildingChange={setIsBuilding} />
+          {isSceneReady && (
+            <Scene parameters={parameters} onBuildingChange={setIsBuilding} onProgressChange={setBuildProgress} />
+          )}
           <OrbitControls
             enablePan={true}
             enableZoom={true}
@@ -577,13 +601,7 @@ export default function KeychainViewer({ parameters, commitId = 0 }: KeychainVie
           />
         </Canvas>
 
-        {isBuilding && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="px-3 py-2 rounded-md text-white text-sm" style={{ background: 'rgba(0,0,0,0.55)' }}>
-              Building…
-            </div>
-          </div>
-        )}
+        <LoadingOverlay isLoading={isBuilding} progress={buildProgress} />
       </div>
       
       <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">

@@ -11,7 +11,6 @@ import { X, ShoppingCart } from 'lucide-react'
 export default function KeychainGenerator() {
   const [parameters, setParameters] = useState<KeychainParameters>(defaultParameters)
   const [pendingParameters, setPendingParameters] = useState<KeychainParameters>(defaultParameters)
-  const [isGenerating, setIsGenerating] = useState(false)
   const [commitId, setCommitId] = useState(0)
   const [keychainList, setKeychainList] = useState<KeychainListItem[]>([])
   const [showPurchaseForm, setShowPurchaseForm] = useState(false)
@@ -55,7 +54,6 @@ export default function KeychainGenerator() {
   }, [])
 
   const handleGenerate = useCallback(() => {
-    setIsGenerating(true)
     
     // Scroll to preview section on mobile
     if (window.innerWidth < 1024 && previewRef.current) {
@@ -69,7 +67,6 @@ export default function KeychainGenerator() {
     requestAnimationFrame(() => {
       setParameters(pendingParameters)
       setCommitId((c) => c + 1)
-      setIsGenerating(false)
     })
   }, [pendingParameters])
 
@@ -113,7 +110,6 @@ export default function KeychainGenerator() {
               keychainList={keychainList}
               onRemoveKeychain={handleRemoveKeychain}
               onPurchase={handlePurchase}
-              isGenerating={isGenerating}
             />
           </div>
         </div>
@@ -122,16 +118,7 @@ export default function KeychainGenerator() {
       {/* 3D Viewer */}
       <div className="flex-1 min-h-0 relative" ref={previewRef}>
         <div className="relative h-full">
-          <div className={isGenerating ? 'blur-sm' : ''}>
             <KeychainViewer parameters={parameters} commitId={commitId} />
-          </div>
-          {isGenerating && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="px-4 py-2 rounded-md text-white text-sm" style={{ background: 'rgba(0,0,0,0.55)' }}>
-                Generating…
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

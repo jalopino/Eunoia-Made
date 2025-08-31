@@ -7,6 +7,15 @@ module.exports = {
   ],
   theme: {
     extend: {
+      animation: {
+        'gradient': 'gradient 2s linear infinite',
+      },
+      keyframes: {
+        gradient: {
+          '0%': { 'background-position': '0% 50%' },
+          '100%': { 'background-position': '300% 50%' },
+        },
+      },
       colors: {
         brand: {
           blue: '#1E3C96',
