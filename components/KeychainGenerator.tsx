@@ -478,7 +478,7 @@ export default function KeychainGenerator() {
                         {activeQR ? (
                           <div className="relative w-full h-full animate-fade-in">
                             <Image
-                              src={activeQR === 'gcash' ? '/gcash.png' : '/maya.png'}
+                              src={activeQR === 'gcash' ? '/Gcash.png' : '/Maya.png'}
                               alt={`${activeQR === 'gcash' ? 'GCash' : 'Maya'} QR Code`}
                               fill
                               className="object-contain p-4"
