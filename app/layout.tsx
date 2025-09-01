@@ -1,5 +1,6 @@
 import './globals.css'
 import Navbar from '@/components/Navbar'
+import { ToastProvider } from '@/contexts/ToastContext'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -25,10 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body>
-        <Navbar />
-        <div className="pt-16">
-          {children}
-        </div>
+        <ToastProvider>
+          <Navbar />
+          <div className="pt-16">
+            {children}
+          </div>
+        </ToastProvider>
       </body>
     </html>
   )

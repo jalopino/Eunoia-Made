@@ -32,9 +32,9 @@ export default function PurchaseForm({ keychains, onClose, onSubmit }: PurchaseF
       '#000080': 'Navy Blue',
       '#0F52BA': 'Sapphire Blue',
       '#CCCCFF': 'Periwinkle',
-      '#E6E6FA': 'Lavender'
+      '#967BB6': 'Lavender Purple'
     }
-    return colorMap[hexColor] || hexColor
+    return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
   }
   
   const [formData, setFormData] = useState<Omit<PurchaseFormType, 'keychains'>>({

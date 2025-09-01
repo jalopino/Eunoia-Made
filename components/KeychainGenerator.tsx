@@ -9,6 +9,7 @@ import { exportOBJ as generateOBJ } from '@/utils/objExporter'
 
 import { KeychainParameters, defaultParameters, KeychainListItem } from '@/types/keychain'
 import { X, ShoppingCart } from 'lucide-react'
+import { useToast } from '@/contexts/ToastContext'
 
 
 export default function KeychainGenerator() {
@@ -31,11 +32,11 @@ export default function KeychainGenerator() {
     '#000080': 'Navy Blue',
     '#0F52BA': 'Sapphire Blue',
     '#CCCCFF': 'Periwinkle',
-    '#E6E6FA': 'Lavender Purple'
+    '#967BB6': 'Lavender Purple'
   }
 
   const getColorName = (hexColor: string) => {
-    return colorMap[hexColor.toUpperCase()] || hexColor
+    return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
   }
 
   const [parameters, setParameters] = useState<KeychainParameters>(defaultParameters)
@@ -49,22 +50,26 @@ export default function KeychainGenerator() {
   const [showDeliveryFields, setShowDeliveryFields] = useState(false)
   const [showAllKeychains, setShowAllKeychains] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitProgress, setSubmitProgress] = useState(0)
   const [showTutModal, setShowTutModal] = useState(false)
   const [tutMethod, setTutMethod] = useState<'gcash' | 'maya' | null>(null)
   const [hasSeenTutorial, setHasSeenTutorial] = useState<{ gcash: boolean; maya: boolean }>({ gcash: false, maya: false })
   const previewRef = useRef<HTMLDivElement>(null)
+  const { showToast } = useToast()
 
   const generateKeychainOBJs = async (keychains: KeychainListItem[]) => {
     // Ensure unique folder names when multiple keychains share the same line1
     const nameCounts: Record<string, number> = {}
+    const results = []
 
-    const objPromises = keychains.map(async (keychain) => {
+    for (let i = 0; i < keychains.length; i++) {
+      const keychain = keychains[i]
       const { obj, mtl } = await generateOBJ(keychain.parameters);
       const base = keychain.parameters.line1.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'keychain'
       nameCounts[base] = (nameCounts[base] || 0) + 1
       const folderName = nameCounts[base] > 1 ? `${base}_${nameCounts[base]}` : base
 
-      return {
+      results.push({
         folderName,
         objFile: {
           fileName: 'keychain.obj',
@@ -74,10 +79,16 @@ export default function KeychainGenerator() {
           fileName: 'keychain.mtl',
           data: mtl
         }
-      };
-    });
+      });
 
-    return Promise.all(objPromises);
+      // Update progress (50% for OBJ generation)
+      setSubmitProgress(Math.round((i + 1) / keychains.length * 50))
+      
+      // Small delay to prevent UI blocking
+      await new Promise(resolve => setTimeout(resolve, 10))
+    }
+
+    return results;
   }
 
   const createZipFile = async (files: Array<{ folderName: string, objFile: { fileName: string, data: string }, mtlFile: { fileName: string, data: string } }>) => {
@@ -88,13 +99,18 @@ export default function KeychainGenerator() {
       zip.folder(folderName)!.file(mtlFile.fileName, mtlFile.data);
     });
 
+    setSubmitProgress(75) // ZIP creation started
+
     const zipBlob = await zip.generateAsync({ type: "blob" });
+    
+    setSubmitProgress(90) // ZIP created, converting to base64
     
     // Convert blob to base64
     return new Promise<string>((resolve) => {
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = (reader.result as string).split(',')[1];
+        setSubmitProgress(95) // Base64 conversion complete
         resolve(base64);
       };
       reader.readAsDataURL(zipBlob);
@@ -147,17 +163,24 @@ export default function KeychainGenerator() {
   }, [pendingParameters])
 
   const handleAddToList = useCallback(async () => {
+    if (keychainList.length >= 10) {
+      showToast('Maximum 10 keychains per order. Please submit your current order first.', 'warning')
+      return
+    }
+    
     const newKeychain: KeychainListItem = {
       id: Date.now().toString(),
       parameters: { ...parameters },
       addedAt: new Date().toISOString()
     }
     setKeychainList(prev => [...prev, newKeychain])
-  }, [parameters])
+    showToast('Keychain added to cart!', 'success')
+  }, [parameters, keychainList.length, showToast])
 
   const handleRemoveKeychain = useCallback((id: string) => {
     setKeychainList(prev => prev.filter(k => k.id !== id))
-  }, [])
+    showToast('Keychain removed from cart', 'info')
+  }, [showToast])
 
   const handlePurchase = useCallback(() => {
     setShowPurchaseForm(true)
@@ -166,16 +189,17 @@ export default function KeychainGenerator() {
   const handlePurchaseSubmit = useCallback(async (formData: any) => {
     console.log('Submitting with:', { activeQR, selectedFile, formData });
     if (!activeQR) {
-      alert('Please select a payment method (GCash or Maya)')
+      showToast('Please select a payment method (GCash or Maya)', 'error')
       return
     }
 
     if (!selectedFile) {
-      alert('Please upload your payment receipt first')
+      showToast('Please upload your payment receipt first', 'error')
       return
     }
 
     setIsSubmitting(true)
+    setSubmitProgress(0)
 
     try {
       // Generate OBJ files and create ZIP
@@ -218,26 +242,44 @@ export default function KeychainGenerator() {
         }
       }
 
-      // Send the order to the webhook
-      const response = await fetch('https://workflows.eunoiadigitalph.com/webhook/keygo-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit order');
+      setSubmitProgress(98) // Sending to webhook
+      
+      // Send the order to the webhook with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      
+      try {
+        const response = await fetch('https://workflows.eunoiadigitalph.com/webhook/keygo-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timed out. Please try again or contact support.');
+        }
+        throw fetchError;
       }
 
-      alert('Order submitted successfully! We will contact you soon.');
+      setSubmitProgress(100) // Complete
+      showToast('Order submitted successfully! We will contact you soon.', 'success', 5000);
     } catch (error) {
       console.error('Error submitting order:', error);
-      alert('Failed to submit order. Please try again or contact support.');
+      showToast('Failed to submit order. Please try again or contact support.', 'error', 5000);
       return;
     } finally {
       setIsSubmitting(false);
+      setSubmitProgress(0);
     }
     setShowPurchaseForm(false)
     setKeychainList([])
@@ -639,15 +681,28 @@ export default function KeychainGenerator() {
                   </div>
 
                 {/* Submit Button */}
-                                  <button
+                <button
                   type="submit"
                   form="purchase-form"
                   disabled={isSubmitting}
-                  className={`mt-2 w-full bg-[#FFB81C] text-white py-3 px-4 rounded-lg transition-colors font-medium ${
+                  className={`mt-2 w-full bg-[#FFB81C] text-white py-3 px-4 rounded-lg transition-colors font-medium relative overflow-hidden ${
                     isSubmitting ? 'opacity-75 cursor-not-allowed' : 'hover:bg-[#FFB81C]'
                   }`}
                 >
-                  {isSubmitting ? 'Processing Order...' : 'Submit Order'}
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Processing Order... {submitProgress}%</span>
+                    </div>
+                  ) : (
+                    'Submit Order'
+                  )}
+                  {isSubmitting && (
+                    <div 
+                      className="absolute bottom-0 left-0 h-1 bg-white transition-all duration-300"
+                      style={{ width: `${submitProgress}%` }}
+                    />
+                  )}
                 </button>
                 </div>
               </div>

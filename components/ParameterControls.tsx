@@ -49,9 +49,10 @@ export default function ParameterControls({
       '#000080': 'Navy Blue',
       '#0F52BA': 'Sapphire Blue',
       '#CCCCFF': 'Periwinkle',
-      '#E6E6FA': 'Lavender Purple'
+      '#967BB6': 'Lavender Purple',
+      '#967bb6': 'Lavender Purple'
     }
-    return colorMap[hexColor] || hexColor
+    return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
   }
   const [fonts] = useState<FontOption[]>(defaultFonts)
   const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors'>('text')
@@ -358,15 +359,15 @@ export default function ParameterControls({
         <div className="space-y-4">
           <button
             onClick={onAddToList}
-            disabled={isGenerating}
+            disabled={isGenerating || keychainList.length >= 10}
             className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 font-medium ${
-              isGenerating 
+              isGenerating || keychainList.length >= 10
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                 : 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500'
             }`}
           >
             <ListPlus className="w-5 h-5" />
-            Add Keychain to Cart
+            {keychainList.length >= 10 ? 'Max 10 Keychains' : 'Add Keychain to Cart'}
           </button>
           
           <button
@@ -388,7 +389,7 @@ export default function ParameterControls({
           <div className="mt-6 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-gray-900">
-                Your Keychains ({keychainList.length})
+                Your Keychains ({keychainList.length}/10)
               </h4>
               <button
                 onClick={onPurchase}
