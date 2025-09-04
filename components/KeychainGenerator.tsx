@@ -162,15 +162,17 @@ export default function KeychainGenerator() {
     })
   }, [pendingParameters])
 
-  const handleAddToList = useCallback(async () => {
+  const handleAddToList = useCallback(async (customParameters?: KeychainParameters, customId?: string) => {
     if (keychainList.length >= 10) {
       showToast('Maximum 10 keychains per order. Please submit your current order first.', 'warning')
       return
     }
     
+    const paramsToUse = customParameters || parameters
+    
     const newKeychain: KeychainListItem = {
-      id: Date.now().toString(),
-      parameters: { ...parameters },
+      id: customId || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      parameters: { ...paramsToUse },
       addedAt: new Date().toISOString()
     }
     setKeychainList(prev => [...prev, newKeychain])
