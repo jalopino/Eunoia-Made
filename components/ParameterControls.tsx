@@ -200,7 +200,7 @@ export default function ParameterControls({
                     id="line1"
                     value={parameters.line1}
                     onChange={(e) => {
-                      const newValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                      const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
                       if ((newValue.length + (parameters.line2?.length || 0)) <= 12) {
                         onParameterChange('line1', newValue);
                         // Clear second line if first line is empty
@@ -227,7 +227,7 @@ export default function ParameterControls({
                     id="line2"
                     value={parameters.line2}
                     onChange={(e) => {
-                      const newValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                      const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
                       // Only allow input if first line has content
                       if (parameters.line1.length > 0 && (newValue.length + parameters.line1.length) <= 12) {
                         onParameterChange('line2', newValue);
@@ -418,7 +418,7 @@ export default function ParameterControls({
                     placeholder="First line"
                     value={individualBulkInput.firstLine}
                     onChange={(e) => {
-                      const newValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '')
+                      const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '')
                       if (newValue.length <= 12) {
                         setIndividualBulkInput(prev => ({
                           ...prev,
@@ -439,7 +439,7 @@ export default function ParameterControls({
                     placeholder="Second line (optional)"
                     value={individualBulkInput.secondLine}
                     onChange={(e) => {
-                      const newValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '')
+                      const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '')
                       const maxSecondLineLength = 12 - individualBulkInput.firstLine.length
                       
                       if (newValue.length <= maxSecondLineLength) {
@@ -524,8 +524,8 @@ export default function ParameterControls({
                       
                       const newKeychains = lines.map(line => {
                         const parts = line.split(' - ')
-                        const firstLine = parts[0].trim().replace(/[^a-zA-Z0-9]/g, '')
-                        const secondLine = parts[1] ? parts[1].trim().replace(/[^a-zA-Z0-9]/g, '') : ''
+                        const firstLine = parts[0].trim().replace(/[^a-zA-Z0-9\s'"]/g, '')
+                        const secondLine = parts[1] ? parts[1].trim().replace(/[^a-zA-Z0-9\s'"]/g, '') : ''
                         
                         return {
                           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
