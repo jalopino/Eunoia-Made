@@ -6,7 +6,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative py-20 bg-white">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
+          <div className="max-w-3xl text-start">
             <h1 className="text-4xl font-bold text-gray-900 mb-6 font-rethink">
               About Eunoia Made
             </h1>

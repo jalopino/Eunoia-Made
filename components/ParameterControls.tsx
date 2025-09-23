@@ -13,9 +13,9 @@ interface ParameterControlsProps {
   onGenerate: () => void
   onAddToList: (customParameters?: KeychainParameters, customId?: string) => void
   keychainList: any[]
-  onRemoveKeychain: (id: string) => void
   onPurchase: () => void
   isGenerating?: boolean
+  disableCheckout?: boolean
 }
 
 export default function ParameterControls({
@@ -25,15 +25,17 @@ export default function ParameterControls({
   onGenerate,
   onAddToList,
   keychainList,
-  onRemoveKeychain,
   onPurchase,
-  isGenerating = false
+  isGenerating = false,
+  disableCheckout = false
 }: ParameterControlsProps) {
   
   const { showToast } = useToast()
   
   // Helper function to convert hex colors to readable names
   const getColorName = (hexColor: string) => {
+    if (!hexColor) return hexColor // Handle undefined/null values
+    
     const colorMap: { [key: string]: string } = {
       '#FFFFFF': 'Cotton White',
       '#D3D3D3': 'Light Grey',
@@ -287,6 +289,25 @@ export default function ParameterControls({
         {/* Ring Settings Tab */}
         {activeTab === 'ring' && (
           <div className="space-y-4">
+            <div className="input-group">
+              <label htmlFor="innerDiameter" className="text-sm font-medium text-gray-700">
+                Inner Diameter:
+              </label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  id="innerDiameter"
+                  min="2"
+                  max="6"
+                  step="0.5"
+                  value={parameters.innerDiameter}
+                  onChange={(e) => handleSliderChange('innerDiameter', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="value-display">{parameters.innerDiameter}mm</span>
+              </div>
+            </div>
+
             <div className="input-group">
               <label htmlFor="ringX" className="text-sm font-medium text-gray-700">
                 X Position:
@@ -571,9 +592,10 @@ export default function ParameterControls({
                       // Add all keychains sequentially
                       for (const keychain of keychainsToAdd) {
                         const customParameters = {
-                          ...parameters,
+                          ...parameters, // Use current parameters as base
                           line1: keychain.name,
                           line2: keychain.secondLine || '',
+                          // Use individual bulk keychain parameters
                           font: keychain.font,
                           fontUrl: keychain.fontUrl,
                           baseColor: keychain.baseColor,
@@ -587,6 +609,7 @@ export default function ParameterControls({
                       
                       // Clear bulk keychains after all additions are complete
                       setBulkKeychains([])
+                      // Use a single toast for all additions to prevent multiple toasts
                       showToast(`Added ${keychainsToAdd.length} keychain${keychainsToAdd.length > 1 ? 's' : ''} to cart!`, 'success')
                     }}
                     disabled={isGenerating || keychainList.length + bulkKeychains.length > 10}
@@ -630,8 +653,8 @@ export default function ParameterControls({
                             </button>
                           </div>
                           
-                          {/* Compact Controls */}
-                          <div className="grid grid-cols-3 gap-2 text-xs">
+                          {/* Individual Parameter Controls */}
+                          <div className="grid grid-cols-3 gap-2 text-xs mt-2">
                             <select
                               value={keychain.font}
                               onChange={(e) => {
@@ -694,12 +717,9 @@ export default function ParameterControls({
             )}
             
             {/* Checkout Button for Bulk Order */}
-            {activeTab === 'bulk' && keychainList.length > 0 && (
+            {activeTab === 'bulk' && keychainList.length > 0 && !disableCheckout && (
               <div className="border-t border-gray-200 pt-4 mt-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-gray-900">
-                    Your Keychains ({keychainList.length}/10)
-                  </h4>
+                <div className="flex items-center justify-end">
                   <button
                     onClick={onPurchase}
                     disabled={isGenerating}
@@ -736,20 +756,6 @@ export default function ParameterControls({
                               {keychain.parameters.line1}
                               {keychain.parameters.line2 && ` - ${keychain.parameters.line2}`}
                             </span>
-                            <button
-                              onClick={() => onRemoveKeychain(keychain.id)}
-                              disabled={isGenerating}
-                              className={`p-1 flex-shrink-0 ${
-                                isGenerating 
-                                  ? 'text-gray-400 cursor-not-allowed' 
-                                  : 'text-red-500 hover:text-red-700'
-                              }`}
-                              title="Remove keychain"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
                           </div>
                           
                           <div className="text-xs text-gray-500">
@@ -802,10 +808,8 @@ export default function ParameterControls({
         {/* Keychain List Display */}
         {keychainList.length > 0 && (
           <div className="mt-6 space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-900">
-                Your Keychains ({keychainList.length}/10)
-              </h4>
+            <div className="flex items-center justify-end">
+              {!disableCheckout && (
               <button
                 onClick={onPurchase}
                 disabled={isGenerating}
@@ -817,6 +821,7 @@ export default function ParameterControls({
               >
                 Checkout
               </button>
+              )}
             </div>
             
             <div className="space-y-2 min-h-fit overflow-y-auto">
@@ -841,20 +846,6 @@ export default function ParameterControls({
                           {keychain.parameters.line1}
                           {keychain.parameters.line2 && ` - ${keychain.parameters.line2}`}
                         </span>
-                        <button
-                          onClick={() => onRemoveKeychain(keychain.id)}
-                          disabled={isGenerating}
-                          className={`p-1 flex-shrink-0 ${
-                            isGenerating 
-                              ? 'text-gray-400 cursor-not-allowed' 
-                              : 'text-red-500 hover:text-red-700'
-                          }`}
-                          title="Remove keychain"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
                       </div>
                       <div className="text-xs text-gray-600">
                         <span className="font-medium">Font:</span> {keychain.parameters.font}

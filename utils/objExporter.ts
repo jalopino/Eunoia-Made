@@ -7,6 +7,13 @@ import { CSG } from 'three-csg-ts'
 // @ts-ignore
 import ClipperLib from 'clipper-lib'
 
+// Fix Math function types
+declare global {
+  interface Math {
+    round(x: number): number
+  }
+}
+
 // Advanced mesh repair specifically targeting non-manifold edges
 function repairMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeometry {
   // For base geometry, use less aggressive repair to preserve shape
@@ -208,7 +215,7 @@ function removeIsolatedVertices(geom: THREE.BufferGeometry): THREE.BufferGeometr
   }
 }
 
-export async function exportOBJ(parameters: KeychainParameters) {
+export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'keychain.mtl') {
   // Build geometry (same approach as 3MF)
   const { FontLoader } = await import('three/examples/jsm/loaders/FontLoader.js')
   const url = parameters.fontUrl?.toLowerCase()
@@ -348,7 +355,7 @@ export async function exportOBJ(parameters: KeychainParameters) {
     ...(textPart ? [{ name: 'text', geom: textPart, color: parameters.twoColors ? parameters.textColor : parameters.baseColor }] : [])
   ]
 
-  const { obj, mtl } = await buildOBJWithMTL(partsForExport)
+  const { obj, mtl } = await buildOBJWithMTL(partsForExport, mtlFileName)
   return { obj, mtl }
 }
 

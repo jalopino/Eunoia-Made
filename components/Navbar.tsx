@@ -3,18 +3,21 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ShoppingCart } from 'lucide-react'
+import { useCart } from '@/contexts/CartContext'
 
-export default function Navbar() {
+interface NavbarProps {
+  onCartOpen: () => void
+}
+
+export default function Navbar({ onCartOpen }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const { getTotalItems } = useCart()
 
   const navItems = [
-    //{ name: 'Home', href: '/' },
-    { name: 'KEYGO Maker', href: '/keygo' },
-    //{ name: 'Shop', href: '/shop' },
-    //{ name: 'About', href: '/about' },
-    //{ name: 'Contact', href: '/contact' },
+    { name: 'Home', href: '/' },
+    { name: 'Shop', href: '/shop' },
   ]
 
   const isActive = (path: string) => pathname === path
@@ -47,17 +50,32 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-          >
-            {isOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+          {/* Cart Button */}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={onCartOpen}
+              className="relative p-2 text-gray-600 hover:text-brand-blue hover:bg-gray-100 rounded-md transition-colors"
+            >
+              <ShoppingCart className="h-6 w-6" />
+              {getTotalItems() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-brand-blue text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {getTotalItems()}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -78,6 +96,17 @@ export default function Navbar() {
                   {item.name}
                 </Link>
               ))}
+              {/* Mobile Cart Button */}
+              <button
+                onClick={() => {
+                  onCartOpen()
+                  setIsOpen(false)
+                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Cart ({getTotalItems()})
+              </button>
             </div>
           </div>
         )}

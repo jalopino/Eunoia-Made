@@ -3,17 +3,17 @@
 import { useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import JSZip from 'jszip'
-import ParameterControls from './ParameterControls'
-import KeychainViewer from './KeychainViewer'
-import { exportOBJ as generateOBJ } from '@/utils/objExporter'
+import RoundedParameterControls from './RoundedParameterControls'
+import RoundedKeychainViewer from './RoundedKeychainViewer'
+import { exportRoundedKeychainOBJ as generateOBJ } from '@/utils/roundedObjExporter'
 
-import { KeychainParameters, defaultParameters, KeychainListItem } from '@/types/keychain'
+import { KeychainParameters, roundedDefaultParameters, KeychainListItem } from '@/types/keychain'
 import { X, ShoppingCart } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import { useCart } from '@/contexts/CartContext'
 
 
-export default function KeychainGenerator() {
+export default function RoundedKeychainGenerator() {
   // Helper function to convert hex colors to readable names
   const colorMap: { [key: string]: string } = {
     '#FFFFFF': 'Cotton White',
@@ -40,17 +40,17 @@ export default function KeychainGenerator() {
     return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
   }
 
-  const [parameters, setParameters] = useState<KeychainParameters>(defaultParameters)
-  const [pendingParameters, setPendingParameters] = useState<KeychainParameters>(defaultParameters)
+  const [parameters, setParameters] = useState<KeychainParameters>(roundedDefaultParameters)
+  const [pendingParameters, setPendingParameters] = useState<KeychainParameters>(roundedDefaultParameters)
   const [commitId, setCommitId] = useState(0)
   // Purchase functionality removed - use CheckoutModal from shop page
   const previewRef = useRef<HTMLDivElement>(null)
   const { showToast } = useToast()
   const { addItem, items: cartItems } = useCart()
   
-  // Filter cart items to only show KEYGO items
+  // Filter cart items to only show rounded keychain items
   const keychainList: KeychainListItem[] = cartItems
-    .filter(item => item.type === 'regular')
+    .filter(item => item.type === 'rounded')
     .map(item => ({
       id: item.id,
       parameters: item.parameters,
@@ -62,7 +62,7 @@ export default function KeychainGenerator() {
   }, [])
 
   const resetToDefaults = useCallback(() => {
-    setPendingParameters(defaultParameters)
+    setPendingParameters(roundedDefaultParameters)
   }, [])
 
   const handleGenerate = useCallback(() => {
@@ -87,8 +87,8 @@ export default function KeychainGenerator() {
         folderName,
         objContent: obj,
         mtlContent: mtl,
-        itemName: 'KEYGO',
-        itemType: 'regular'
+        itemName: 'KEYTONE',
+        itemType: 'rounded'
       })
     }
     
@@ -109,16 +109,16 @@ export default function KeychainGenerator() {
   }
 
   const calculateTotal = () => {
-    const total = keychainList.length * 40 // ₱40 per keychain
+    const total = keychainList.length * 45 // ₱45 per keychain
     return { total }
   }
 
   const handleAddToList = useCallback((customParameters?: KeychainParameters, customId?: string) => {
     const paramsToUse = customParameters || pendingParameters
     addItem({
-      name: 'KEYGO',
-      type: 'regular',
-      price: 40,
+      name: 'KEYTONE',
+      type: 'rounded',
+      price: 45,
       parameters: paramsToUse,
       quantity: 1
     })
@@ -135,7 +135,7 @@ export default function KeychainGenerator() {
       <div className="lg:w-80 lg:bg-white lg:rounded-lg lg:p-3 lg:shadow-sm lg:border lg:border-gray-200">
         <div className="lg:h-full lg:flex lg:flex-col">
           <div className="lg:flex-1">
-            <ParameterControls
+            <RoundedParameterControls
               parameters={pendingParameters}
               onParameterChange={updateParameter}
               onReset={resetToDefaults}
@@ -152,7 +152,7 @@ export default function KeychainGenerator() {
       {/* 3D Viewer */}
       <div className="flex-1 relative" ref={previewRef}>
         <div className="sticky top-20 w-full">
-            <KeychainViewer parameters={parameters} commitId={commitId} />
+            <RoundedKeychainViewer parameters={parameters} commitId={commitId} />
         </div>
       </div>
 

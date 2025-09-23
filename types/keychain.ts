@@ -11,6 +11,7 @@ export interface KeychainParameters {
   // Border settings
   borderThickness: number
   borderHeight: number
+  borderRoundedness: number
 
   // Ring settings
   showRing: boolean
@@ -39,6 +40,7 @@ export const defaultParameters: KeychainParameters = {
   // Border settings
   borderThickness: 3,
   borderHeight: 3,
+  borderRoundedness: 0.3,
 
   // Ring settings
   showRing: true,
@@ -51,6 +53,35 @@ export const defaultParameters: KeychainParameters = {
   // Color settings
   twoColors: true,
   baseColor: '#000000',
+  textColor: '#FFFFFF'
+}
+
+export const roundedDefaultParameters: KeychainParameters = {
+  // Text settings
+  line1: 'Eunoia Made',
+  line2: '',
+  font: 'Britanica',
+  fontUrl: '/fonts/Britanica.typeface.json',
+  textHeight: 1.5,
+  textSize: 12,
+  lineSpacing: 1.2,
+
+  // Border settings
+  borderThickness: 2,
+  borderHeight: 3,
+  borderRoundedness: 2,
+
+  // Ring settings
+  showRing: true,
+  outerDiameter: 11,
+  innerDiameter: 4,
+  ringHeight: 3,
+  ringX: 0,
+  ringY: 0,
+
+  // Color settings
+  twoColors: false,
+  baseColor: '#98FB98',
   textColor: '#FFFFFF'
 }
 
@@ -71,7 +102,9 @@ export const defaultFonts: FontOption[] = [
   { name: 'Bangers', value: 'Bangers', fileUrl: '/fonts/Bangers.typeface.json' },
   { name: 'Audiowide', value: 'Audiowide', fileUrl: '/fonts/Audiowide.typeface.json' },
   { name: 'Archivo', value: 'Archivo', fileUrl: '/fonts/Archivo.typeface.json' },
-  { name: 'Borel', value: 'Borel', fileUrl: '/fonts/Borel.typeface.json' }
+  { name: 'Borel', value: 'Borel', fileUrl: '/fonts/Borel.typeface.json' },
+  { name: 'Caprasimo', value: 'Caprasimo', fileUrl: '/fonts/Caprasimo.typeface.json' },
+  { name: 'Rethink', value: 'Rethink', fileUrl: '/fonts/Rethink.typeface.json' }
 ]
 
 export interface ColorOption {
@@ -88,7 +121,7 @@ export const colorOptions: ColorOption[] = [
   { name: 'Red', value: '#FF0000' },
   { name: 'Pastel Orange', value: '#FFB347' },
   { name: 'Yellow', value: '#FFFF00' },
-  { name: 'Pastel Yellow', value: '#FFFFE0' },
+  { name: 'Pale Yellow', value: '#FFFF99' },
   { name: 'Pale Green', value: '#98FB98' },
   { name: 'Mint Green', value: '#98FF98' },
   { name: 'Dark Green', value: '#006400' },
@@ -113,4 +146,25 @@ export interface PurchaseForm {
   deliveryType: 'delivery' | 'pickup'
   receiptImage?: File
   keychains: KeychainListItem[]
+}
+
+export interface CartItem {
+  id: string
+  name: string
+  type: 'regular' | 'rounded'
+  price: number
+  parameters: KeychainParameters
+  quantity: number
+  addedAt: string
+}
+
+export interface CartContextType {
+  items: CartItem[]
+  addItem: (item: Omit<CartItem, 'id' | 'addedAt'>) => void
+  removeItem: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
+  clearCart: () => void
+  getTotalPrice: () => number
+  getTotalItems: () => number
+  isHydrated: boolean
 }
