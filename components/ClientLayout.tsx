@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import Navbar from '@/components/Navbar'
 import CartSidebar from '@/components/CartSidebar'
-import { ToastProvider } from '@/contexts/ToastContext'
-
+import Footer from '@/components/Footer'
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false)
 
@@ -15,6 +14,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         {children}
       </div>
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-    </>
+      <Footer />
+    </> 
   )
 }

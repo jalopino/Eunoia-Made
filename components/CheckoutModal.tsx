@@ -519,7 +519,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           {selectedFile ? 'Receipt uploaded successfully!' : 'Click to upload receipt'}
                         </div>
                         <div className="text-xs opacity-75">
-                          {selectedFile ? 'Tap to change' : 'PNG, JPG files only (max 3MB)'}
+                          {selectedFile ? 'Tap to change' : 'All image formats (max 3MB)'}
                         </div>
                       </div>
                     </label>

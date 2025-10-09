@@ -18,6 +18,7 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
+    { name: 'Contact', href: '/contact' },
   ]
 
   const isActive = (path: string) => pathname === path
@@ -96,17 +97,6 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
                   {item.name}
                 </Link>
               ))}
-              {/* Mobile Cart Button */}
-              <button
-                onClick={() => {
-                  onCartOpen()
-                  setIsOpen(false)
-                }}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Cart ({getTotalItems()})
-              </button>
             </div>
           </div>
         )}
