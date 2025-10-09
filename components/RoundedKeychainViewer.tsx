@@ -309,7 +309,10 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
         }
         
         if (parameters.line2) {
-          const line2Shapes = font.generateShapes(parameters.line2, size)
+          // Only use line2FontSize if admin mode is enabled and it's different from textSize
+          const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+          const line2Size = isAdminMode && parameters.line2FontSize !== parameters.textSize ? parameters.line2FontSize : parameters.textSize
+          const line2Shapes = font.generateShapes(parameters.line2, line2Size)
           if (line2Shapes.length) {
             const g2 = new THREE.ExtrudeGeometry(line2Shapes, { 
               depth: Math.abs(parameters.textHeight), 

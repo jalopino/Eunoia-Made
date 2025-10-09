@@ -55,7 +55,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 overflow-y">
           {items.length === 0 ? (
             <div className="text-center py-8">
               <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />

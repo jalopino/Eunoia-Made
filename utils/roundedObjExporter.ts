@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { KeychainParameters } from '@/types/keychain'
 import { TTFLoader } from 'three-stdlib'
-import { CSG } from 'three-csg-ts'
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 // Fix Math function types
@@ -13,38 +12,42 @@ declare global {
   }
 }
 
-// Advanced mesh repair (same as original OBJ exporter)
-function repairMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeometry {
+// Simplified mesh cleaning - only remove degenerate triangles and weld vertices
+// NO CSG operations = NO non-manifold edges
+function cleanMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeometry {
   try {
+    // Convert to non-indexed for processing
     const nonIndexed = geom.index ? geom.toNonIndexed() : geom.clone()
     const positions = nonIndexed.getAttribute('position') as THREE.BufferAttribute
     
-    // Remove degenerate triangles
+    // Remove degenerate triangles (zero-area or nearly zero-area)
     const goodTriangles: number[] = []
-    const DEGENERATE_TOLERANCE = 0.001
+    const TOLERANCE = 0.0001 // Very small tolerance
     
     for (let i = 0; i < positions.count; i += 3) {
-      const ax = positions.getX(i)
-      const ay = positions.getY(i)
-      const az = positions.getZ(i)
-      const bx = positions.getX(i + 1)
-      const by = positions.getY(i + 1)
-      const bz = positions.getZ(i + 1)
-      const cx = positions.getX(i + 2)
-      const cy = positions.getY(i + 2)
-      const cz = positions.getZ(i + 2)
+      const ax = positions.getX(i), ay = positions.getY(i), az = positions.getZ(i)
+      const bx = positions.getX(i + 1), by = positions.getY(i + 1), bz = positions.getZ(i + 1)
+      const cx = positions.getX(i + 2), cy = positions.getY(i + 2), cz = positions.getZ(i + 2)
       
-      const abDist = Math.sqrt((ax-bx)**2 + (ay-by)**2 + (az-bz)**2)
-      const bcDist = Math.sqrt((bx-cx)**2 + (by-cy)**2 + (bz-cz)**2)
-      const caDist = Math.sqrt((cx-ax)**2 + (cy-ay)**2 + (cz-az)**2)
+      // Calculate triangle area using cross product
+      const abx = bx - ax, aby = by - ay, abz = bz - az
+      const acx = cx - ax, acy = cy - ay, acz = cz - az
+      const crossX = aby * acz - abz * acy
+      const crossY = abz * acx - abx * acz
+      const crossZ = abx * acy - aby * acx
+      const area = Math.sqrt(crossX * crossX + crossY * crossY + crossZ * crossZ) / 2
       
-      if (abDist > DEGENERATE_TOLERANCE && 
-          bcDist > DEGENERATE_TOLERANCE && 
-          caDist > DEGENERATE_TOLERANCE) {
+      if (area > TOLERANCE) {
         goodTriangles.push(i, i+1, i+2)
       }
     }
     
+    if (goodTriangles.length === 0) {
+      console.warn(`No valid triangles found in ${name}`)
+      return geom
+    }
+    
+    // Create new geometry with only good triangles
     const cleaned = new THREE.BufferGeometry()
     const newPositions = new Float32Array(goodTriangles.length * 3)
     
@@ -57,18 +60,19 @@ function repairMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeome
     
     cleaned.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
     
-    const welded = BufferGeometryUtils.mergeVertices(cleaned, 0.005)
+    // Gentle vertex welding to remove duplicates
+    const welded = BufferGeometryUtils.mergeVertices(cleaned, 0.0001)
     welded.computeVertexNormals()
     
-    console.log(`Mesh repair for ${name}:`, {
-      originalVertices: positions.count,
-      cleanedTriangles: goodTriangles.length / 3,
-      weldedVertices: welded.getAttribute('position').count
+    console.log(`Cleaned ${name}:`, {
+      originalTriangles: positions.count / 3,
+      validTriangles: goodTriangles.length / 3,
+      finalVertices: welded.getAttribute('position').count
     })
     
     return welded
   } catch (error) {
-    console.warn(`Mesh repair failed for ${name}, using original:`, error)
+    console.warn(`Mesh cleaning failed for ${name}:`, error)
     return geom
   }
 }
@@ -167,10 +171,13 @@ export async function exportRoundedKeychainOBJ(parameters: KeychainParameters, m
   }
 
   // Generate actual text geometry using font.generateShapes (same as original)
-  const size = parameters.textSize
-  const spacing = parameters.textSize * parameters.lineSpacing
-  const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, size) : []
-  const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, size) : []
+  const line1Size = parameters.textSize
+  // Only use line2FontSize if admin mode is enabled and it's different from textSize
+  const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+  const line2Size = isAdminMode && parameters.line2FontSize !== parameters.textSize ? parameters.line2FontSize : parameters.textSize
+  const spacing = line1Size * parameters.lineSpacing
+  const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, line1Size) : []
+  const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, line2Size) : []
 
   const textGeoms: THREE.BufferGeometry[] = []
   let measuredWidth = 0
@@ -400,37 +407,36 @@ export async function exportRoundedKeychainOBJ(parameters: KeychainParameters, m
   }
 
   // Export base and border as separate parts (KEYTONE has two-level design)
-  const basePart = repairMesh(baseGeom, 'base')
-  const borderPart = repairMesh(finalBorderGeom, 'border')
+  // NO CSG operations - each part stays separate and manifold
+  const basePart = cleanMesh(baseGeom, 'base')
+  const borderPart = cleanMesh(finalBorderGeom, 'border')
   
   console.log('Border part created:', {
     vertices: borderPart.getAttribute('position')?.count || 0,
     indices: borderPart.getIndex()?.count || 0
   })
   
-  // Union ring with base if present
-  let finalBasePart = basePart
+  // Ring - NO CSG, export as separate part
+  let ringPart: THREE.BufferGeometry | null = null
   if (ringGeom) {
-    const baseMesh = new THREE.Mesh(basePart)
-    const ringMesh = new THREE.Mesh(ringGeom)
-    const unionedMesh = CSG.union(baseMesh, ringMesh)
-    finalBasePart = repairMesh(unionedMesh.geometry, 'base_with_ring')
+    ringPart = cleanMesh(ringGeom, 'ring')
   }
 
-  // Union all text geoms into one shell
-  let textPart: THREE.BufferGeometry | null = null
-  if (textGeoms.length) {
-    let tm = new THREE.Mesh(textGeoms[0])
-    for (let i = 1; i < textGeoms.length; i++) {
-      tm = CSG.union(tm, new THREE.Mesh(textGeoms[i]))
-    }
-    textPart = repairMesh(tm.geometry, 'text')
-  }
+  // Text parts - keep separate, NO union
+  const textParts: THREE.BufferGeometry[] = []
+  textGeoms.forEach((tg, i) => {
+    textParts.push(cleanMesh(tg, `text_${i}`))
+  })
 
   const partsForExport = [
-    { name: 'base', geom: finalBasePart, color: parameters.baseColor },
+    { name: 'base', geom: basePart, color: parameters.baseColor },
     { name: 'border', geom: borderPart, color: parameters.twoColors ? parameters.textColor : parameters.baseColor },
-    ...(textPart ? [{ name: 'text', geom: textPart, color: parameters.twoColors ? parameters.textColor : parameters.baseColor }] : [])
+    ...(ringPart ? [{ name: 'ring', geom: ringPart, color: parameters.baseColor }] : []),
+    ...textParts.map((tp, i) => ({ 
+      name: `text_${i}`, 
+      geom: tp, 
+      color: parameters.twoColors ? parameters.textColor : parameters.baseColor 
+    }))
   ]
 
   const { obj, mtl } = await buildOBJWithMTL(partsForExport, mtlFileName)

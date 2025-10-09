@@ -32,6 +32,15 @@ export default function ParameterControls({
   
   const { showToast } = useToast()
   
+  // Admin mode detection
+  const [isAdminMode, setIsAdminMode] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      setIsAdminMode(urlParams.get('pass') === 'eunoia')
+    }
+  }, [])
+  
   // Helper function to convert hex colors to readable names
   const getColorName = (hexColor: string) => {
     if (!hexColor) return hexColor // Handle undefined/null values
@@ -283,12 +292,100 @@ export default function ParameterControls({
                 <span className="value-display">{parameters.lineSpacing}</span>
               </div>
             </div>
+
+            {/* Admin-only: Second Line Font Size */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="line2FontSize" className="text-sm font-medium text-gray-700">
+                  Second Line Font Size:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="line2FontSize"
+                    min="1"
+                    max="24"
+                    step="1"
+                    value={parameters.line2FontSize}
+                    onChange={(e) => handleSliderChange('line2FontSize', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.line2FontSize}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Admin-only: Text Y Position */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="textOffsetY" className="text-sm font-medium text-gray-700">
+                  Text Y Position:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="textOffsetY"
+                    min="-10"
+                    max="10"
+                    step="0.5"
+                    value={parameters.textOffsetY}
+                    onChange={(e) => handleSliderChange('textOffsetY', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.textOffsetY}mm</span>
+                </div>
+              </div>
+            )}
+
+            {/* Admin-only: Text Height */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="textHeight" className="text-sm font-medium text-gray-700">
+                  Text Height:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="textHeight"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={parameters.textHeight}
+                    onChange={(e) => handleSliderChange('textHeight', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.textHeight}mm</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Ring Settings Tab */}
         {activeTab === 'ring' && (
           <div className="space-y-4">
+            {/* Admin-only: Advanced Ring Controls */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="outerDiameter" className="text-sm font-medium text-gray-700">
+                  Outer Diameter:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="outerDiameter"
+                    min="8"
+                    max="15"
+                    step="0.5"
+                    value={parameters.outerDiameter}
+                    onChange={(e) => handleSliderChange('outerDiameter', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.outerDiameter}mm</span>
+                </div>
+              </div>
+            )}
+
             <div className="input-group">
               <label htmlFor="innerDiameter" className="text-sm font-medium text-gray-700">
                 Inner Diameter:
@@ -307,6 +404,28 @@ export default function ParameterControls({
                 <span className="value-display">{parameters.innerDiameter}mm</span>
               </div>
             </div>
+
+            {/* Admin-only: Ring Height */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="ringHeight" className="text-sm font-medium text-gray-700">
+                  Ring Height:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="ringHeight"
+                    min="1"
+                    max="5"
+                    step="0.1"
+                    value={parameters.ringHeight}
+                    onChange={(e) => handleSliderChange('ringHeight', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.ringHeight}mm</span>
+                </div>
+              </div>
+            )}
 
             <div className="input-group">
               <label htmlFor="ringX" className="text-sm font-medium text-gray-700">
@@ -414,6 +533,70 @@ export default function ParameterControls({
                 </div>
               )}
             </div>
+
+            {/* Admin-only: Border Controls */}
+            {isAdminMode && (
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="text-sm font-medium text-gray-700">Border Settings</h4>
+                
+                <div className="input-group">
+                  <label htmlFor="borderThickness" className="text-sm font-medium text-gray-700">
+                    Border Thickness:
+                  </label>
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      id="borderThickness"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={parameters.borderThickness}
+                      onChange={(e) => handleSliderChange('borderThickness', e.target.value)}
+                      className="flex-1"
+                    />
+                    <span className="value-display">{parameters.borderThickness}mm</span>
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="borderHeight" className="text-sm font-medium text-gray-700">
+                    Border Height:
+                  </label>
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      id="borderHeight"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={parameters.borderHeight}
+                      onChange={(e) => handleSliderChange('borderHeight', e.target.value)}
+                      className="flex-1"
+                    />
+                    <span className="value-display">{parameters.borderHeight}mm</span>
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="borderRoundedness" className="text-sm font-medium text-gray-700">
+                    Border Roundedness:
+                  </label>
+                  <div className="slider-container">
+                    <input
+                      type="range"
+                      id="borderRoundedness"
+                      min="0.1"
+                      max="4.0"
+                      step="0.1"
+                      value={parameters.borderRoundedness}
+                      onChange={(e) => handleSliderChange('borderRoundedness', e.target.value)}
+                      className="flex-1"
+                    />
+                    <span className="value-display">{parameters.borderRoundedness}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -822,42 +1005,6 @@ export default function ParameterControls({
                 Checkout
               </button>
               )}
-            </div>
-            
-            <div className="space-y-2 min-h-fit overflow-y-auto">
-              {keychainList.map((keychain) => (
-                <div
-                  key={keychain.id}
-                  className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm"
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Gradient Preview */}
-                    <div 
-                      className="w-8 h-8 rounded-lg shadow-sm flex-shrink-0"
-                      style={{ 
-                        background: `linear-gradient(135deg, ${keychain.parameters.baseColor} 0%, ${keychain.parameters.textColor} 100%)`
-                      }}
-                    />
-                    
-                    {/* Keychain Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-gray-900 truncate">
-                          {keychain.parameters.line1}
-                          {keychain.parameters.line2 && ` - ${keychain.parameters.line2}`}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Font:</span> {keychain.parameters.font}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        <span className="font-medium">Base:</span> {getColorName(keychain.parameters.baseColor)} • 
-                        <span className="font-medium ml-1">Text:</span> {getColorName(keychain.parameters.textColor)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}

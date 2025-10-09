@@ -6,7 +6,9 @@ export interface KeychainParameters {
   fontUrl?: string
   textHeight: number
   textSize: number
+  line2FontSize: number
   lineSpacing: number
+  textOffsetY: number // Admin-only: Y position offset for text
 
   // Border settings
   borderThickness: number
@@ -31,11 +33,13 @@ export const defaultParameters: KeychainParameters = {
   // Text settings
   line1: 'Eunoia',
   line2: 'Made',
-  font: 'Britanica',
-  fontUrl: '/fonts/Britanica.typeface.json',
+  font: 'Rethink',
+  fontUrl: '/fonts/Rethink.typeface.json',
   textHeight: 1.5,
   textSize: 12,
+  line2FontSize: 12,
   lineSpacing: 1.2,
+  textOffsetY: 0,
 
   // Border settings
   borderThickness: 3,
@@ -60,11 +64,13 @@ export const roundedDefaultParameters: KeychainParameters = {
   // Text settings
   line1: 'Eunoia Made',
   line2: '',
-  font: 'Britanica',
-  fontUrl: '/fonts/Britanica.typeface.json',
+  font: 'Rethink',
+  fontUrl: '/fonts/Rethink.typeface.json',
   textHeight: 1.5,
   textSize: 12,
+  line2FontSize: 12,
   lineSpacing: 1.2,
+  textOffsetY: 0,
 
   // Border settings
   borderThickness: 2,
@@ -93,7 +99,7 @@ export interface FontOption {
 }
 
 export const defaultFonts: FontOption[] = [
-  { name: 'Britanica', value: 'Britanica', fileUrl: '/fonts/Britanica.typeface.json' },
+  { name: 'Rethink', value: 'Rethink', fileUrl: '/fonts/Rethink.typeface.json' },
   { name: 'Changa One', value: 'ChangaOne', fileUrl: '/fonts/ChangaOne.typeface.json' },
   { name: 'Pacifico', value: 'Pacifico', fileUrl: '/fonts/Pacifico.typeface.json' },
   { name: 'Bungee', value: 'Bungee', fileUrl: '/fonts/Bungee.typeface.json' },
@@ -103,8 +109,7 @@ export const defaultFonts: FontOption[] = [
   { name: 'Audiowide', value: 'Audiowide', fileUrl: '/fonts/Audiowide.typeface.json' },
   { name: 'Archivo', value: 'Archivo', fileUrl: '/fonts/Archivo.typeface.json' },
   { name: 'Borel', value: 'Borel', fileUrl: '/fonts/Borel.typeface.json' },
-  { name: 'Caprasimo', value: 'Caprasimo', fileUrl: '/fonts/Caprasimo.typeface.json' },
-  { name: 'Rethink', value: 'Rethink', fileUrl: '/fonts/Rethink.typeface.json' }
+  { name: 'Caprasimo', value: 'Caprasimo', fileUrl: '/fonts/Caprasimo.typeface.json' }
 ]
 
 export interface ColorOption {
@@ -114,23 +119,38 @@ export interface ColorOption {
 
 export const colorOptions: ColorOption[] = [
   { name: 'Cotton White', value: '#FFFFFF' },
-  { name: 'Light Grey', value: '#D3D3D3' },
-  { name: 'Black', value: '#000000' },
+  { name: 'Fossil Grey', value: '#C8C8C8' },
+  { name: 'Charcoal Black', value: '#36454F' },
+  { name: 'Earth Brown', value: '#8B4513' },
+  { name: 'Army Brown', value: '#5F4B32' },
+  { name: 'Wood Brown', value: '#966F33' },
+  { name: 'Army Beige', value: '#C3B091' },
+  { name: 'Candy', value: '#FF69B4' },
   { name: 'Sakura Pink', value: '#FFB6C1' },
   { name: 'Pink', value: '#FFC0CB' },
-  { name: 'Red', value: '#FF0000' },
-  { name: 'Pastel Orange', value: '#FFB347' },
-  { name: 'Yellow', value: '#FFFF00' },
-  { name: 'Pale Yellow', value: '#FFFF99' },
+  { name: 'Army Red', value: '#7C0A02' },
+  { name: 'Pastel Peach', value: '#FFDAB9' },
+  { name: 'Sunrise Orange', value: '#FF7F50' },
+  { name: 'Basic Orange', value: '#FFA500' },
+  { name: 'Sunshine Yellow', value: '#FFFF00' },
+  { name: 'Pastel Banana', value: '#FFF5B4' },
+  { name: 'Creamy Yellow', value: '#FFFACD' },
   { name: 'Pale Green', value: '#98FB98' },
-  { name: 'Mint Green', value: '#98FF98' },
-  { name: 'Dark Green', value: '#006400' },
-  { name: 'Teal', value: '#008080' },
-  { name: 'Light Blue', value: '#ADD8E6' },
-  { name: 'Navy Blue', value: '#000080' },
+  { name: 'Mint Green', value: '#AAF0D1' },
+  { name: 'Army Light Green', value: '#9CAF88' },
+  { name: 'Forest Green', value: '#228B22' },
+  { name: 'Grass Green', value: '#7CFC00' },
+  { name: 'Basic Green', value: '#00FF00' },
+  { name: 'Army Dark Green', value: '#4B5320' },
+  { name: 'Teal Green', value: '#008080' },
+  { name: 'Ice Blue', value: '#AFEEEE' },
+  { name: 'Muted Blue', value: '#6A7B8C' },
   { name: 'Sapphire Blue', value: '#0F52BA' },
+  { name: 'Army Blue', value: '#3C5A75' },
+  { name: 'Electric Indigo', value: '#6600FF' },
+  { name: 'Lavender', value: '#967bb6' },
   { name: 'Periwinkle', value: '#CCCCFF' },
-  { name: 'Lavender Purple', value: '#967bb6' }
+  { name: 'Muted White', value: '#F5F5F5' }
 ]
 
 export interface KeychainListItem {

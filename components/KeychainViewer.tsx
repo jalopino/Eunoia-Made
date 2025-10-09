@@ -163,7 +163,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
       const firstLineY = parameters.line2 ? parameters.textSize * parameters.lineSpacing / 2 : 0
       ringPos = [
         initialX + parameters.ringX,
-        firstLineY + parameters.ringY,
+        firstLineY + parameters.textOffsetY + parameters.ringY,
         0
       ]
     }
@@ -254,11 +254,14 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
         }
 
         // Generate shapes for lines (no in-place translate on shapes)
-        const size = parameters.textSize
-        const spacing = parameters.textSize * parameters.lineSpacing
+        const line1Size = parameters.textSize
+        // Only use line2FontSize if admin mode is enabled and it's different from textSize
+        const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+        const line2Size = isAdminMode && parameters.line2FontSize !== parameters.textSize ? parameters.line2FontSize : parameters.textSize
+        const spacing = line1Size * parameters.lineSpacing
         onProgressChange(40)
-        const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, size) : []
-        const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, size) : []
+        const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, line1Size) : []
+        const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, line2Size) : []
         onProgressChange(50)
 
         // Build 3D text geometry per line and apply offsets on the geometry
@@ -269,7 +272,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
           const bb1 = g1.boundingBox
           const cx1 = bb1 ? (bb1.min.x + bb1.max.x) / 2 : 0
           const cy1 = bb1 ? (bb1.min.y + bb1.max.y) / 2 : 0
-          g1.translate(-cx1, (parameters.line2 ? spacing / 2 : 0) - cy1, 0)
+          g1.translate(-cx1, (parameters.line2 ? spacing / 2 : 0) - cy1 + parameters.textOffsetY, 0)
           textLineGeoms.push(g1)
         }
         if (line2Shapes.length) {
@@ -278,7 +281,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
           const bb2 = g2.boundingBox
           const cx2 = bb2 ? (bb2.min.x + bb2.max.x) / 2 : 0
           const cy2 = bb2 ? (bb2.min.y + bb2.max.y) / 2 : 0
-          g2.translate(-cx2, -spacing / 2 - cy2, 0)
+          g2.translate(-cx2, -spacing / 2 - cy2 + parameters.textOffsetY, 0)
           textLineGeoms.push(g2)
         }
         // Merge text geometry if height is non-zero
@@ -304,7 +307,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
           const bb1s = g1tmp.boundingBox
           const cx1s = bb1s ? (bb1s.min.x + bb1s.max.x) / 2 : 0
           const cy1s = bb1s ? (bb1s.min.y + bb1s.max.y) / 2 : 0
-          const dy1s = parameters.line2 ? spacing / 2 : 0
+          const dy1s = (parameters.line2 ? spacing / 2 : 0) + parameters.textOffsetY
           line1Shapes.forEach((sh: THREE.Shape) => {
             const outer = sh.getPoints(64).map(p => ({ X: Math.round((p.x - cx1s) * SCALE), Y: Math.round((p.y - cy1s + dy1s) * SCALE) }))
             if (outer.length > 2) subjectPaths.push(outer)
@@ -322,7 +325,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
           const bb2s = g2tmp.boundingBox
           const cx2s = bb2s ? (bb2s.min.x + bb2s.max.x) / 2 : 0
           const cy2s = bb2s ? (bb2s.min.y + bb2s.max.y) / 2 : 0
-          const dy2s = -spacing / 2
+          const dy2s = -spacing / 2 + parameters.textOffsetY
           line2Shapes.forEach((sh: THREE.Shape) => {
             const outer = sh.getPoints(64).map(p => ({ X: Math.round((p.x - cx2s) * SCALE), Y: Math.round((p.y - cy2s + dy2s) * SCALE) }))
             if (outer.length > 2) subjectPaths.push(outer)

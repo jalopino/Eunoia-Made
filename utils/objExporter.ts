@@ -3,7 +3,6 @@ import { KeychainParameters } from '@/types/keychain'
 import * as THREE from 'three'
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { TTFLoader } from 'three-stdlib'
-import { CSG } from 'three-csg-ts'
 // @ts-ignore
 import ClipperLib from 'clipper-lib'
 
@@ -14,108 +13,42 @@ declare global {
   }
 }
 
-// Advanced mesh repair specifically targeting non-manifold edges
-function repairMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeometry {
-  // For base geometry, use less aggressive repair to preserve shape
-  if (name === 'base') {
-    try {
-      // Convert to non-indexed for processing
-      const nonIndexed = geom.index ? geom.toNonIndexed() : geom.clone()
-      const positions = nonIndexed.getAttribute('position') as THREE.BufferAttribute
-      
-      // Step 1: Remove only very degenerate triangles (much higher tolerance)
-      const goodTriangles: number[] = []
-      const DEGENERATE_TOLERANCE = 0.01 // Higher tolerance for base
-      
-      for (let i = 0; i < positions.count; i += 3) {
-        const ax = positions.getX(i)
-        const ay = positions.getY(i)
-        const az = positions.getZ(i)
-        const bx = positions.getX(i + 1)
-        const by = positions.getY(i + 1)
-        const bz = positions.getZ(i + 1)
-        const cx = positions.getX(i + 2)
-        const cy = positions.getY(i + 2)
-        const cz = positions.getZ(i + 2)
-        
-        // Check if any two vertices are too close
-        const abDist = Math.sqrt((ax-bx)**2 + (ay-by)**2 + (az-bz)**2)
-        const bcDist = Math.sqrt((bx-cx)**2 + (by-cy)**2 + (bz-cz)**2)
-        const caDist = Math.sqrt((cx-ax)**2 + (cy-ay)**2 + (cz-az)**2)
-        
-        if (abDist > DEGENERATE_TOLERANCE && 
-            bcDist > DEGENERATE_TOLERANCE && 
-            caDist > DEGENERATE_TOLERANCE) {
-          goodTriangles.push(i, i+1, i+2)
-        }
-      }
-      
-      // Step 2: Create new geometry with only good triangles
-      const cleaned = new THREE.BufferGeometry()
-      const newPositions = new Float32Array(goodTriangles.length * 3)
-      
-      for (let i = 0; i < goodTriangles.length; i++) {
-        const oldIdx = goodTriangles[i]
-        newPositions[i*3] = positions.getX(oldIdx)
-        newPositions[i*3+1] = positions.getY(oldIdx)
-        newPositions[i*3+2] = positions.getZ(oldIdx)
-      }
-      
-      cleaned.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
-      
-      // Step 3: Gentle vertex welding (less aggressive)
-      const welded = BufferGeometryUtils.mergeVertices(cleaned, 0.001) // Less aggressive welding
-      welded.computeVertexNormals()
-      
-      console.log(`Gentle mesh repair for base:`, {
-        originalVertices: positions.count,
-        originalTriangles: positions.count / 3,
-        cleanedTriangles: goodTriangles.length / 3,
-        weldedVertices: welded.getAttribute('position').count,
-        finalTriangles: welded.getAttribute('position').count / 3
-      })
-      
-      return welded
-    } catch (error) {
-      console.warn(`Base mesh repair failed, using original:`, error)
-      return geom
-    }
-  }
-  
-    // For other geometries (text, ring), use the original aggressive repair
+// Simplified mesh cleaning - only remove degenerate triangles and weld vertices
+// NO CSG operations = NO non-manifold edges
+function cleanMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeometry {
   try {
     // Convert to non-indexed for processing
     const nonIndexed = geom.index ? geom.toNonIndexed() : geom.clone()
     const positions = nonIndexed.getAttribute('position') as THREE.BufferAttribute
     
-    // Step 1: Remove degenerate triangles
+    // Remove degenerate triangles (zero-area or nearly zero-area)
     const goodTriangles: number[] = []
-    const DEGENERATE_TOLERANCE = 0.001
+    const TOLERANCE = 0.0001 // Very small tolerance
     
     for (let i = 0; i < positions.count; i += 3) {
-      const ax = positions.getX(i)
-      const ay = positions.getY(i)
-      const az = positions.getZ(i)
-      const bx = positions.getX(i + 1)
-      const by = positions.getY(i + 1)
-      const bz = positions.getZ(i + 1)
-      const cx = positions.getX(i + 2)
-      const cy = positions.getY(i + 2)
-      const cz = positions.getZ(i + 2)
+      const ax = positions.getX(i), ay = positions.getY(i), az = positions.getZ(i)
+      const bx = positions.getX(i + 1), by = positions.getY(i + 1), bz = positions.getZ(i + 1)
+      const cx = positions.getX(i + 2), cy = positions.getY(i + 2), cz = positions.getZ(i + 2)
       
-      // Check if any two vertices are too close
-      const abDist = Math.sqrt((ax-bx)**2 + (ay-by)**2 + (az-bz)**2)
-      const bcDist = Math.sqrt((bx-cx)**2 + (by-cy)**2 + (bz-cz)**2)
-      const caDist = Math.sqrt((cx-ax)**2 + (cy-ay)**2 + (cz-az)**2)
+      // Calculate triangle area using cross product
+      const abx = bx - ax, aby = by - ay, abz = bz - az
+      const acx = cx - ax, acy = cy - ay, acz = cz - az
+      const crossX = aby * acz - abz * acy
+      const crossY = abz * acx - abx * acz
+      const crossZ = abx * acy - aby * acx
+      const area = Math.sqrt(crossX * crossX + crossY * crossY + crossZ * crossZ) / 2
       
-      if (abDist > DEGENERATE_TOLERANCE && 
-          bcDist > DEGENERATE_TOLERANCE && 
-          caDist > DEGENERATE_TOLERANCE) {
+      if (area > TOLERANCE) {
         goodTriangles.push(i, i+1, i+2)
       }
     }
     
-    // Step 2: Create new geometry with only good triangles
+    if (goodTriangles.length === 0) {
+      console.warn(`No valid triangles found in ${name}`)
+      return geom
+    }
+    
+    // Create new geometry with only good triangles
     const cleaned = new THREE.BufferGeometry()
     const newPositions = new Float32Array(goodTriangles.length * 3)
     
@@ -128,89 +61,19 @@ function repairMesh(geom: THREE.BufferGeometry, name: string): THREE.BufferGeome
     
     cleaned.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
     
-    // Step 3: Advanced vertex welding with edge analysis
-    const welded = BufferGeometryUtils.mergeVertices(cleaned, 0.005) // More aggressive welding
+    // Gentle vertex welding to remove duplicates
+    const welded = BufferGeometryUtils.mergeVertices(cleaned, 0.0001)
     welded.computeVertexNormals()
     
-    // Step 4: Remove isolated vertices and fix edge connectivity
-    const finalGeom = removeIsolatedVertices(welded)
-    finalGeom.computeVertexNormals()
-    
-    console.log(`Advanced mesh repair for ${name}:`, {
-      originalVertices: positions.count,
+    console.log(`Cleaned ${name}:`, {
       originalTriangles: positions.count / 3,
-      cleanedTriangles: goodTriangles.length / 3,
-      weldedVertices: welded.getAttribute('position').count,
-      finalVertices: finalGeom.getAttribute('position').count,
-      finalTriangles: finalGeom.getIndex() ? finalGeom.getIndex()!.count / 3 : finalGeom.getAttribute('position').count / 3
+      validTriangles: goodTriangles.length / 3,
+      finalVertices: welded.getAttribute('position').count
     })
     
-    return finalGeom
-    } catch (error) {
-    console.warn(`Mesh repair failed for ${name}, using original:`, error)
-    return geom
-  }
-}
-
-// Remove isolated vertices that can cause non-manifold edges
-function removeIsolatedVertices(geom: THREE.BufferGeometry): THREE.BufferGeometry {
-  try {
-    const positions = geom.getAttribute('position') as THREE.BufferAttribute
-    const index = geom.getIndex()
-    
-    if (!index) return geom
-    
-    // Count vertex usage
-    const vertexUsage = new Array(positions.count).fill(0)
-    for (let i = 0; i < index.count; i++) {
-      vertexUsage[index.getX(i)]++
-    }
-    
-    // Find vertices used in at least 3 triangles (connected)
-    const validVertices = new Set<number>()
-    for (let i = 0; i < vertexUsage.length; i++) {
-      if (vertexUsage[i] >= 3) {
-        validVertices.add(i)
-      }
-    }
-    
-    if (validVertices.size === positions.count) {
-      return geom // All vertices are valid
-    }
-    
-    // Create new geometry with only valid vertices
-    const newPositions: number[] = []
-    const newIndices: number[] = []
-    const vertexMap = new Map<number, number>()
-    let newVertexIndex = 0
-    
-    // Map old vertex indices to new ones
-    for (let i = 0; i < positions.count; i++) {
-      if (validVertices.has(i)) {
-        vertexMap.set(i, newVertexIndex)
-        newPositions.push(positions.getX(i), positions.getY(i), positions.getZ(i))
-        newVertexIndex++
-      }
-    }
-    
-    // Create new indices using only valid vertices
-    for (let i = 0; i < index.count; i += 3) {
-      const a = index.getX(i)
-      const b = index.getX(i + 1)
-      const c = index.getX(i + 2)
-      
-      if (validVertices.has(a) && validVertices.has(b) && validVertices.has(c)) {
-        newIndices.push(vertexMap.get(a)!, vertexMap.get(b)!, vertexMap.get(c)!)
-      }
-    }
-    
-    const result = new THREE.BufferGeometry()
-    result.setAttribute('position', new THREE.BufferAttribute(new Float32Array(newPositions), 3))
-    result.setIndex(newIndices)
-    
-    return result
+    return welded
   } catch (error) {
-    console.warn('Failed to remove isolated vertices:', error)
+    console.warn(`Mesh cleaning failed for ${name}:`, error)
     return geom
   }
 }
@@ -234,10 +97,13 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     font = fl.parse(json)
   }
 
-  const size = parameters.textSize
-  const spacing = parameters.textSize * parameters.lineSpacing
-  const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, size) : []
-  const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, size) : []
+  const line1Size = parameters.textSize
+  // Only use line2FontSize if admin mode is enabled and it's different from textSize
+  const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+  const line2Size = isAdminMode && parameters.line2FontSize !== parameters.textSize ? parameters.line2FontSize : parameters.textSize
+  const spacing = line1Size * parameters.lineSpacing
+  const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, line1Size) : []
+  const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, line2Size) : []
 
   const textGeoms: THREE.BufferGeometry[] = []
   if (parameters.textHeight !== 0) {
@@ -249,7 +115,7 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
       })
       g1.computeBoundingBox(); const bb = g1.boundingBox!
       const cx = (bb.min.x + bb.max.x) / 2; const cy = (bb.min.y + bb.max.y) / 2
-      g1.translate(-cx, (parameters.line2 ? spacing/2 : 0) - cy, parameters.borderHeight)
+      g1.translate(-cx, (parameters.line2 ? spacing/2 : 0) - cy + parameters.textOffsetY, parameters.borderHeight)
       textGeoms.push(g1)
     }
     if (line2Shapes.length) {
@@ -260,7 +126,7 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
       })
       g2.computeBoundingBox(); const bb = g2.boundingBox!
       const cx = (bb.min.x + bb.max.x) / 2; const cy = (bb.min.y + bb.max.y) / 2
-      g2.translate(-cx, -spacing/2 - cy, parameters.borderHeight)
+      g2.translate(-cx, -spacing/2 - cy + parameters.textOffsetY, parameters.borderHeight)
       textGeoms.push(g2)
     }
   }
@@ -272,7 +138,7 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     const g1tmp = new THREE.ShapeGeometry(line1Shapes)
     g1tmp.computeBoundingBox(); const bb = g1tmp.boundingBox!
     const cx = (bb.min.x + bb.max.x) / 2; const cy = (bb.min.y + bb.max.y) / 2
-    const dy = parameters.line2 ? spacing/2 : 0
+    const dy = (parameters.line2 ? spacing/2 : 0) + parameters.textOffsetY
     line1Shapes.forEach((sh: any) => {
       const outer = sh.getPoints(128).map((p:any)=>({X:Math.round((p.x-cx)*SCALE),Y:Math.round((p.y-cy+dy)*SCALE)}))
       if (outer.length>2) subjectPaths.push(outer)
@@ -286,7 +152,7 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     const g2tmp = new THREE.ShapeGeometry(line2Shapes)
     g2tmp.computeBoundingBox(); const bb = g2tmp.boundingBox!
     const cx = (bb.min.x + bb.max.x) / 2; const cy = (bb.min.y + bb.max.y) / 2
-    const dy = -spacing/2
+    const dy = -spacing/2 + parameters.textOffsetY
     line2Shapes.forEach((sh: any) => {
       const outer = sh.getPoints(128).map((p:any)=>({X:Math.round((p.x-cx)*SCALE),Y:Math.round((p.y-cy+dy)*SCALE)}))
       if (outer.length>2) subjectPaths.push(outer)
@@ -310,8 +176,10 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     })) 
   })
   const baseGeom = mergeBufferGeoms(baseGeoms)
-  // Ring
-  let ringGeom:THREE.BufferGeometry|null = null
+  const basePart = cleanMesh(baseGeom, 'base')
+  
+  // Ring - NO CSG, export as separate part
+  let ringPart: THREE.BufferGeometry | null = null
   if (parameters.showRing) {
     const ringShape = new THREE.Shape()
     ringShape.moveTo(parameters.outerDiameter/2,0)
@@ -320,7 +188,7 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     hole.moveTo(parameters.innerDiameter/2,0)
     hole.absarc(0,0,parameters.innerDiameter/2,0,Math.PI*2,true)
     ringShape.holes.push(hole)
-    ringGeom = new THREE.ExtrudeGeometry(ringShape,{
+    const ringGeom = new THREE.ExtrudeGeometry(ringShape,{
       depth: parameters.ringHeight,
       bevelEnabled: false,
       steps: 1
@@ -328,31 +196,25 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     baseGeom.computeBoundingBox()
     const b=baseGeom.boundingBox!
     const baseW=b.max.x-b.min.x
-    ringGeom.translate(-(baseW/2+parameters.outerDiameter/4)+parameters.ringX,(parameters.line2?spacing/2:0)+parameters.ringY,0)
+    ringGeom.translate(-(baseW/2+parameters.outerDiameter/4)+parameters.ringX,(parameters.line2?spacing/2:0)+parameters.textOffsetY+parameters.ringY,0)
+    ringPart = cleanMesh(ringGeom, 'ring')
   }
 
-  // CSG union base + ring into a single watertight shell
-  let baseMesh = new THREE.Mesh(baseGeom)
-  if (ringGeom) {
-    const ringMesh = new THREE.Mesh(ringGeom)
-    baseMesh = CSG.union(baseMesh, ringMesh)
-  }
-  const basePart = repairMesh(baseMesh.geometry, 'base')
-
-  // Build OBJ+MTL
-  // Union all text geoms into one shell
-  let textPart: THREE.BufferGeometry | null = null
-  if (textGeoms.length) {
-    let tm = new THREE.Mesh(textGeoms[0])
-    for (let i=1;i<textGeoms.length;i++) {
-      tm = CSG.union(tm, new THREE.Mesh(textGeoms[i]))
-    }
-    textPart = repairMesh(tm.geometry, 'text')
-  }
+  // Build OBJ+MTL - NO CSG operations, export each part separately
+  // Text parts - keep separate, no union
+  const textParts: THREE.BufferGeometry[] = []
+  textGeoms.forEach((tg, i) => {
+    textParts.push(cleanMesh(tg, `text_${i}`))
+  })
 
   const partsForExport = [
     { name: 'base', geom: basePart, color: parameters.baseColor },
-    ...(textPart ? [{ name: 'text', geom: textPart, color: parameters.twoColors ? parameters.textColor : parameters.baseColor }] : [])
+    ...(ringPart ? [{ name: 'ring', geom: ringPart, color: parameters.baseColor }] : []),
+    ...textParts.map((tp, i) => ({ 
+      name: `text_${i}`, 
+      geom: tp, 
+      color: parameters.twoColors ? parameters.textColor : parameters.baseColor 
+    }))
   ]
 
   const { obj, mtl } = await buildOBJWithMTL(partsForExport, mtlFileName)

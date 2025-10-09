@@ -32,6 +32,15 @@ export default function RoundedParameterControls({
   
   const { showToast } = useToast()
   
+  // Admin mode detection
+  const [isAdminMode, setIsAdminMode] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      setIsAdminMode(urlParams.get('pass') === 'eunoia')
+    }
+  }, [])
+  
   // Helper function to convert hex colors to readable names
   const getColorName = (hexColor: string) => {
     if (!hexColor) return hexColor // Handle undefined/null values
@@ -240,6 +249,50 @@ export default function RoundedParameterControls({
               </select>
             </div>
 
+            {/* Admin-only: Second Line Font Size */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="line2FontSize" className="text-sm font-medium text-gray-700">
+                  Second Line Font Size:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="line2FontSize"
+                    min="1"
+                    max="24"
+                    step="1"
+                    value={parameters.line2FontSize}
+                    onChange={(e) => handleSliderChange('line2FontSize', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.line2FontSize}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Admin-only: Text Height */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="textHeight" className="text-sm font-medium text-gray-700">
+                  Text Height:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="textHeight"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={parameters.textHeight}
+                    onChange={(e) => handleSliderChange('textHeight', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.textHeight}mm</span>
+                </div>
+              </div>
+            )}
+
             <div className="input-group">
               <label htmlFor="borderThickness" className="text-sm font-medium text-gray-700">
                 Border Width:
@@ -277,6 +330,28 @@ export default function RoundedParameterControls({
                 <span className="value-display">{parameters.borderRoundedness}</span>
               </div>
             </div>
+
+            {/* Admin-only: Border Height */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="borderHeight" className="text-sm font-medium text-gray-700">
+                  Border Height:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="borderHeight"
+                    min="1"
+                    max="5"
+                    step="0.1"
+                    value={parameters.borderHeight}
+                    onChange={(e) => handleSliderChange('borderHeight', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.borderHeight}mm</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -297,6 +372,28 @@ export default function RoundedParameterControls({
 
             {parameters.showRing && (
               <>
+                {/* Admin-only: Advanced Ring Controls */}
+                {isAdminMode && (
+                  <div className="input-group">
+                    <label htmlFor="outerDiameter" className="text-sm font-medium text-gray-700">
+                      Outer Diameter:
+                    </label>
+                    <div className="slider-container">
+                      <input
+                        type="range"
+                        id="outerDiameter"
+                        min="8"
+                        max="15"
+                        step="0.5"
+                        value={parameters.outerDiameter}
+                        onChange={(e) => handleSliderChange('outerDiameter', e.target.value)}
+                        className="flex-1"
+                      />
+                      <span className="value-display">{parameters.outerDiameter}mm</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="input-group">
                   <label htmlFor="innerDiameter" className="text-sm font-medium text-gray-700">
                     Inner Diameter:
@@ -315,6 +412,28 @@ export default function RoundedParameterControls({
                     <span className="value-display">{parameters.innerDiameter}mm</span>
                   </div>
                 </div>
+
+                {/* Admin-only: Ring Height */}
+                {isAdminMode && (
+                  <div className="input-group">
+                    <label htmlFor="ringHeight" className="text-sm font-medium text-gray-700">
+                      Ring Height:
+                    </label>
+                    <div className="slider-container">
+                      <input
+                        type="range"
+                        id="ringHeight"
+                        min="1"
+                        max="5"
+                        step="0.1"
+                        value={parameters.ringHeight}
+                        onChange={(e) => handleSliderChange('ringHeight', e.target.value)}
+                        className="flex-1"
+                      />
+                      <span className="value-display">{parameters.ringHeight}mm</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="input-group">
                   <label htmlFor="ringX" className="text-sm font-medium text-gray-700">

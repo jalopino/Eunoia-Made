@@ -66,6 +66,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       textHeight: keychainParameters.textHeight,
       textSize: keychainParameters.textSize,
       lineSpacing: keychainParameters.lineSpacing,
+      textOffsetY: keychainParameters.textOffsetY,
       borderThickness: keychainParameters.borderThickness,
       borderHeight: keychainParameters.borderHeight,
       borderRoundedness: keychainParameters.borderRoundedness,
@@ -252,7 +253,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const bb1 = g1.boundingBox
           const cx1 = bb1 ? (bb1.min.x + bb1.max.x) / 2 : 0
           const cy1 = bb1 ? (bb1.min.y + bb1.max.y) / 2 : 0
-          g1.translate(-cx1, (keychainParameters.line2 ? spacing / 2 : 0) - cy1, 0)
+          g1.translate(-cx1, (keychainParameters.line2 ? spacing / 2 : 0) - cy1 + keychainParameters.textOffsetY, 0)
           textLineGeoms.push(g1)
           
           // Measure actual bounds
@@ -277,7 +278,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const bb2 = g2.boundingBox
           const cx2 = bb2 ? (bb2.min.x + bb2.max.x) / 2 : 0
           const cy2 = bb2 ? (bb2.min.y + bb2.max.y) / 2 : 0
-          g2.translate(-cx2, -spacing / 2 - cy2, 0)
+          g2.translate(-cx2, -spacing / 2 - cy2 + keychainParameters.textOffsetY, 0)
           textLineGeoms.push(g2)
           
           // Measure actual bounds
@@ -388,7 +389,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       const firstLineY = keychainParameters.line2 ? keychainParameters.textSize * keychainParameters.lineSpacing / 2 : 0
       const ringPos: [number, number, number] = [
         initialX + keychainParameters.ringX,
-        firstLineY + keychainParameters.ringY,
+        firstLineY + keychainParameters.textOffsetY + keychainParameters.ringY,
         0
       ]
       if (!cancelled) {
@@ -491,10 +492,13 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
         setProgress(40)
         onProgressChange(40)
         // Generate text shapes
-        const size = keychainParameters.textSize
-        const spacing = keychainParameters.textSize * keychainParameters.lineSpacing
-        const line1Shapes = keychainParameters.line1 ? font.generateShapes(keychainParameters.line1, size) : []
-        const line2Shapes = keychainParameters.line2 ? font.generateShapes(keychainParameters.line2, size) : []
+        const line1Size = keychainParameters.textSize
+        // Only use line2FontSize if admin mode is enabled and it's different from textSize
+        const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+        const line2Size = isAdminMode && keychainParameters.line2FontSize !== keychainParameters.textSize ? keychainParameters.line2FontSize : keychainParameters.textSize
+        const spacing = line1Size * keychainParameters.lineSpacing
+        const line1Shapes = keychainParameters.line1 ? font.generateShapes(keychainParameters.line1, line1Size) : []
+        const line2Shapes = keychainParameters.line2 ? font.generateShapes(keychainParameters.line2, line2Size) : []
 
         // Build optimized 3D text geometry for preview
         const textLineGeoms: THREE.BufferGeometry[] = []
@@ -508,7 +512,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const bb1 = g1.boundingBox
           const cx1 = bb1 ? (bb1.min.x + bb1.max.x) / 2 : 0
           const cy1 = bb1 ? (bb1.min.y + bb1.max.y) / 2 : 0
-          g1.translate(-cx1, (keychainParameters.line2 ? spacing / 2 : 0) - cy1, 0)
+          g1.translate(-cx1, (keychainParameters.line2 ? spacing / 2 : 0) - cy1 + keychainParameters.textOffsetY, 0)
           textLineGeoms.push(g1)
         }
         if (line2Shapes.length) {
@@ -521,7 +525,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const bb2 = g2.boundingBox
           const cx2 = bb2 ? (bb2.min.x + bb2.max.x) / 2 : 0
           const cy2 = bb2 ? (bb2.min.y + bb2.max.y) / 2 : 0
-          g2.translate(-cx2, -spacing / 2 - cy2, 0)
+          g2.translate(-cx2, -spacing / 2 - cy2 + keychainParameters.textOffsetY, 0)
           textLineGeoms.push(g2)
         }
 
@@ -549,7 +553,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const bb1s = g1tmp.boundingBox
           const cx1s = bb1s ? (bb1s.min.x + bb1s.max.x) / 2 : 0
           const cy1s = bb1s ? (bb1s.min.y + bb1s.max.y) / 2 : 0
-          const dy1s = keychainParameters.line2 ? spacing / 2 : 0
+          const dy1s = (keychainParameters.line2 ? spacing / 2 : 0) + keychainParameters.textOffsetY
           line1Shapes.forEach((sh: THREE.Shape) => {
             const outer = sh.getPoints(64).map(p => ({ X: Math.round((p.x - cx1s) * SCALE), Y: Math.round((p.y - cy1s + dy1s) * SCALE) }))
             if (outer.length > 2) subjectPaths.push(outer)
@@ -567,7 +571,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const bb2s = g2tmp.boundingBox
           const cx2s = bb2s ? (bb2s.min.x + bb2s.max.x) / 2 : 0
           const cy2s = bb2s ? (bb2s.min.y + bb2s.max.y) / 2 : 0
-          const dy2s = -spacing / 2
+          const dy2s = -spacing / 2 + keychainParameters.textOffsetY
           line2Shapes.forEach((sh: THREE.Shape) => {
             const outer = sh.getPoints(64).map(p => ({ X: Math.round((p.x - cx2s) * SCALE), Y: Math.round((p.y - cy2s + dy2s) * SCALE) }))
             if (outer.length > 2) subjectPaths.push(outer)
@@ -638,7 +642,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           mergedBase.translate(-cx, -cy, 0)
           const baseWidth = bbb.max.x - bbb.min.x
           const firstLineY = keychainParameters.line2 ? keychainParameters.textSize * keychainParameters.lineSpacing / 2 : 0
-          calculatedRingPos = [-(baseWidth / 2 + keychainParameters.outerDiameter / 4) + keychainParameters.ringX, firstLineY + keychainParameters.ringY, 0]
+          calculatedRingPos = [-(baseWidth / 2 + keychainParameters.outerDiameter / 4) + keychainParameters.ringX, firstLineY + keychainParameters.textOffsetY + keychainParameters.ringY, 0]
           if (!cancelled) setRingPosState(calculatedRingPos)
         }
 
@@ -688,7 +692,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
     return () => { 
       cancelled = true 
     }
-  }, [keychainParameters.fontUrl, keychainParameters.line1, keychainParameters.line2, keychainParameters.textSize, keychainParameters.lineSpacing, keychainParameters.borderHeight, keychainParameters.borderThickness, keychainParameters.ringX, keychainParameters.ringY, keychainParameters.outerDiameter])
+  }, [keychainParameters.fontUrl, keychainParameters.line1, keychainParameters.line2, keychainParameters.textSize, keychainParameters.lineSpacing, keychainParameters.textOffsetY, keychainParameters.borderHeight, keychainParameters.borderThickness, keychainParameters.ringX, keychainParameters.ringY, keychainParameters.outerDiameter])
 
   // Fallback merge function with proper cleanup
   function mergeBufferGeometriesFallback(geoms: THREE.BufferGeometry[]): THREE.BufferGeometry {
