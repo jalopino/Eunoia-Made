@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       // Create FormData for webhook with zip file
       const webhookFormData = new FormData()
       webhookFormData.append('data', JSON.stringify(webhookPayload))
-      webhookFormData.append('attachments', new Blob([zipBuffer]), zipFileName)
+      webhookFormData.append('attachments', new Blob([new Uint8Array(zipBuffer)]), zipFileName)
       
       webhookResponse = await fetch('https://workflows.eunoiadigitalph.com/webhook/eunoia-made-inquries', {
         method: 'POST',
