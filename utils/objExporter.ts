@@ -132,9 +132,12 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     }
   }
 
-  // Base via union+offset
+  // Base via union+offset with separate border settings
   const SCALE = 1000
   const subjectPaths: any[] = []
+  const line1Paths: any[] = []
+  const line2Paths: any[] = []
+  
   if (line1Shapes.length) {
     const g1tmp = new THREE.ShapeGeometry(line1Shapes)
     g1tmp.computeBoundingBox(); const bb = g1tmp.boundingBox!
@@ -142,10 +145,16 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     const dy = (parameters.line2 ? spacing/2 : 0) + parameters.textOffsetY
     line1Shapes.forEach((sh: any) => {
       const outer = sh.getPoints(128).map((p:any)=>({X:Math.round((p.x-cx)*SCALE),Y:Math.round((p.y-cy+dy)*SCALE)}))
-      if (outer.length>2) subjectPaths.push(outer)
+      if (outer.length>2) {
+        subjectPaths.push(outer)
+        line1Paths.push(outer)
+      }
       if (sh.holes) sh.holes.forEach((h:any)=>{
         const pts = h.getPoints(128).map((p:any)=>({X:Math.round((p.x-cx)*SCALE),Y:Math.round((p.y-cy+dy)*SCALE)}))
-        if (pts.length>2) subjectPaths.push(pts)
+        if (pts.length>2) {
+          subjectPaths.push(pts)
+          line1Paths.push(pts)
+        }
       })
     })
   }
@@ -156,25 +165,105 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
     const dy = -spacing/2 + parameters.textOffsetY
     line2Shapes.forEach((sh: any) => {
       const outer = sh.getPoints(128).map((p:any)=>({X:Math.round((p.x-cx)*SCALE),Y:Math.round((p.y-cy+dy)*SCALE)}))
-      if (outer.length>2) subjectPaths.push(outer)
+      if (outer.length>2) {
+        subjectPaths.push(outer)
+        line2Paths.push(outer)
+      }
       if (sh.holes) sh.holes.forEach((h:any)=>{
         const pts = h.getPoints(128).map((p:any)=>({X:Math.round((p.x-cx)*SCALE),Y:Math.round((p.y-cy+dy)*SCALE)}))
-        if (pts.length>2) subjectPaths.push(pts)
+        if (pts.length>2) {
+          subjectPaths.push(pts)
+          line2Paths.push(pts)
+        }
       })
     })
   }
-  const clipper = new ClipperLib.Clipper(); clipper.AddPaths(subjectPaths, ClipperLib.PolyType.ptSubject, true)
-  const union:any[] = []; clipper.Execute(ClipperLib.ClipType.ctUnion, union, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
-  const co = new ClipperLib.ClipperOffset(2,2); co.AddPaths(union, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
-  const solution:any[] = []; co.Execute(solution, Math.round(parameters.borderThickness*SCALE))
-  const offsetShapes:THREE.Shape[] = []
-  solution.forEach((path:any[])=>{ const s=new THREE.Shape(); path.forEach((pt:any,i:number)=>{const x=pt.X/SCALE; const y=pt.Y/SCALE; if(i===0)s.moveTo(x,y); else s.lineTo(x,y)}); s.closePath(); offsetShapes.push(s) })
-  const baseGeoms:THREE.BufferGeometry[] = []; offsetShapes.forEach(os=>{ 
-    baseGeoms.push(new THREE.ExtrudeGeometry(os,{
+
+  // Create separate borders for each line
+  const allBorderShapes: THREE.Shape[] = []
+  
+  // Process line 1 with its specific border settings
+  if (line1Paths.length > 0) {
+    const clipper1 = new ClipperLib.Clipper()
+    clipper1.AddPaths(line1Paths, ClipperLib.PolyType.ptSubject, true)
+    const union1: any[] = []
+    clipper1.Execute(ClipperLib.ClipType.ctUnion, union1, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+    
+    const co1 = new ClipperLib.ClipperOffset(2, 2)
+    co1.AddPaths(union1, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+    const solution1: any[] = []
+    co1.Execute(solution1, Math.round(parameters.line1BorderThickness * SCALE))
+    
+    solution1.forEach((path: any[]) => {
+      const s = new THREE.Shape()
+      path.forEach((pt: any, i: number) => {
+        const x = pt.X / SCALE
+        const y = pt.Y / SCALE
+        if (i === 0) s.moveTo(x, y)
+        else s.lineTo(x, y)
+      })
+      s.closePath()
+      allBorderShapes.push(s)
+    })
+  }
+
+  // Process line 2 with its specific border settings
+  if (line2Paths.length > 0) {
+    const clipper2 = new ClipperLib.Clipper()
+    clipper2.AddPaths(line2Paths, ClipperLib.PolyType.ptSubject, true)
+    const union2: any[] = []
+    clipper2.Execute(ClipperLib.ClipType.ctUnion, union2, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+    
+    const co2 = new ClipperLib.ClipperOffset(2, 2)
+    co2.AddPaths(union2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+    const solution2: any[] = []
+    co2.Execute(solution2, Math.round(parameters.line2BorderThickness * SCALE))
+    
+    solution2.forEach((path: any[]) => {
+      const s = new THREE.Shape()
+      path.forEach((pt: any, i: number) => {
+        const x = pt.X / SCALE
+        const y = pt.Y / SCALE
+        if (i === 0) s.moveTo(x, y)
+        else s.lineTo(x, y)
+      })
+      s.closePath()
+      allBorderShapes.push(s)
+    })
+  }
+
+  // If no separate borders were created, fall back to global border
+  if (allBorderShapes.length === 0) {
+    const clipper = new ClipperLib.Clipper()
+    clipper.AddPaths(subjectPaths, ClipperLib.PolyType.ptSubject, true)
+    const union: any[] = []
+    clipper.Execute(ClipperLib.ClipType.ctUnion, union, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+    
+    const co = new ClipperLib.ClipperOffset(2, 2)
+    co.AddPaths(union, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+    const solution: any[] = []
+    co.Execute(solution, Math.round(parameters.borderThickness * SCALE))
+    
+    solution.forEach((path: any[]) => {
+      const s = new THREE.Shape()
+      path.forEach((pt: any, i: number) => {
+        const x = pt.X / SCALE
+        const y = pt.Y / SCALE
+        if (i === 0) s.moveTo(x, y)
+        else s.lineTo(x, y)
+      })
+      s.closePath()
+      allBorderShapes.push(s)
+    })
+  }
+
+  const baseGeoms: THREE.BufferGeometry[] = []
+  allBorderShapes.forEach(os => {
+    baseGeoms.push(new THREE.ExtrudeGeometry(os, {
       depth: parameters.borderHeight,
       bevelEnabled: false,
       steps: 1
-    })) 
+    }))
   })
   const baseGeom = mergeBufferGeoms(baseGeoms)
   const basePart = cleanMesh(baseGeom, 'base')

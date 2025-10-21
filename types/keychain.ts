@@ -15,6 +15,15 @@ export interface KeychainParameters {
   borderThickness: number
   borderHeight: number
   borderRoundedness: number
+  
+  // Advanced border mode
+  advancedBorderMode: boolean
+  
+  // Line-specific border settings
+  line1BorderThickness: number
+  line1BorderRoundedness: number
+  line2BorderThickness: number
+  line2BorderRoundedness: number
 
   // Ring settings
   showRing: boolean
@@ -47,6 +56,15 @@ export const defaultParameters: KeychainParameters = {
   borderThickness: 3,
   borderHeight: 3,
   borderRoundedness: 0.3,
+  
+  // Advanced border mode
+  advancedBorderMode: false,
+  
+  // Line-specific border settings
+  line1BorderThickness: 3,
+  line1BorderRoundedness: 0.3,
+  line2BorderThickness: 3,
+  line2BorderRoundedness: 0.3,
 
   // Ring settings
   showRing: true,
@@ -79,6 +97,15 @@ export const roundedDefaultParameters: KeychainParameters = {
   borderThickness: 2,
   borderHeight: 3,
   borderRoundedness: 2,
+  
+  // Advanced border mode
+  advancedBorderMode: false,
+  
+  // Line-specific border settings
+  line1BorderThickness: 2,
+  line1BorderRoundedness: 2,
+  line2BorderThickness: 2,
+  line2BorderRoundedness: 2,
 
   // Ring settings
   showRing: true,

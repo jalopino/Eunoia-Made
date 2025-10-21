@@ -193,9 +193,12 @@ function createBaseGeometry(parameters: KeychainParameters, textGeometry: THREE.
   const maxWidth = calculateMaxWidth(parameters)
   const textHeight = parameters.line2 ? parameters.textSize * parameters.lineSpacing : parameters.textSize
   
+  // Use the maximum border thickness from both lines
+  const maxBorderThickness = Math.max(parameters.line1BorderThickness, parameters.line2BorderThickness)
+  
   // Create a rectangular base that encompasses the text plus border
-  const baseWidth = maxWidth + parameters.borderThickness * 2
-  const baseHeight = textHeight + parameters.borderThickness * 2
+  const baseWidth = maxWidth + maxBorderThickness * 2
+  const baseHeight = textHeight + maxBorderThickness * 2
   
   const baseShape = new THREE.Shape()
   baseShape.moveTo(-baseWidth / 2, -baseHeight / 2)
@@ -204,8 +207,9 @@ function createBaseGeometry(parameters: KeychainParameters, textGeometry: THREE.
   baseShape.lineTo(-baseWidth / 2, baseHeight / 2)
   baseShape.lineTo(-baseWidth / 2, -baseHeight / 2)
   
-  // Add rounded corners (simplified)
-  const roundedShape = createRoundedRectangle(baseWidth, baseHeight, parameters.borderThickness / 2)
+  // Add rounded corners using the maximum border roundedness
+  const maxBorderRoundedness = Math.max(parameters.line1BorderRoundedness, parameters.line2BorderRoundedness)
+  const roundedShape = createRoundedRectangle(baseWidth, baseHeight, maxBorderThickness / 2 * maxBorderRoundedness)
   
   const extrudeSettings = {
     depth: parameters.borderHeight,

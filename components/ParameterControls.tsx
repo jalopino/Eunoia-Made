@@ -1,10 +1,77 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { KeychainParameters, FontOption, defaultFonts, colorOptions } from '@/types/keychain'
-import { RotateCcw, X, Type, Palette, Eye, ListPlus } from 'lucide-react'
+import { RotateCcw, X, Type, Palette, Eye, ListPlus, ChevronDown, Square, Copy, Settings } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 
+// Custom Color Dropdown Component
+interface ColorDropdownProps {
+  value: string
+  onChange: (value: string) => void
+  options: Array<{ name: string; value: string }>
+  className?: string
+}
+
+function ColorDropdown({ value, onChange, options, className = '' }: ColorDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const selectedOption = options.find(option => option.value === value)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm bg-white"
+      >
+        <div className="flex items-center gap-2">
+          <div 
+            className="w-4 h-4 rounded-full border border-gray-300"
+            style={{ backgroundColor: value }}
+          />
+          <span>{selectedOption?.name || 'Select color'}</span>
+        </div>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value)
+                setIsOpen(false)
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+            >
+              <div 
+                className="w-4 h-4 rounded-full border border-gray-300"
+                style={{ backgroundColor: option.value }}
+              />
+              <span className="text-sm">{option.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface ParameterControlsProps {
   parameters: KeychainParameters
@@ -69,7 +136,43 @@ export default function ParameterControls({
     return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
   }
   const [fonts] = useState<FontOption[]>(defaultFonts)
-  const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors' | 'bulk'>('text')
+  const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors' | 'border' | 'bulk' | 'admin'>('text')
+  const [isFontDropdownOpen, setIsFontDropdownOpen] = useState(false)
+  
+  // Close font dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isFontDropdownOpen) {
+        const target = event.target as Element
+        if (!target.closest('.font-dropdown-container')) {
+          setIsFontDropdownOpen(false)
+        }
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isFontDropdownOpen])
+  
+  // Helper function to get Google Font name
+  const getGoogleFontName = (fontName: string) => {
+    const googleFontMap: { [key: string]: string } = {
+      'Rethink': 'Rethink Sans',
+      'ChangaOne': 'Changa One',
+      'Pacifico': 'Pacifico',
+      'Bungee': 'Bungee',
+      'Poppins': 'Poppins',
+      'DynaPuff': 'DynaPuff',
+      'Bangers': 'Bangers',
+      'Audiowide': 'Audiowide',
+      'Archivo': 'Archivo',
+      'Borel': 'Borel',
+      'Caprasimo': 'Caprasimo',
+      'CherryBomb': 'Cherry Bomb One',
+      'PureBlossom': 'Cherry Bomb One'
+    }
+    return googleFontMap[fontName] || fontName
+  }
   const [bulkNames, setBulkNames] = useState<string>('')
   const [bulkKeychains, setBulkKeychains] = useState<Array<{
     id: string
@@ -100,8 +203,32 @@ export default function ParameterControls({
   }, [])
 
   const handleSliderChange = (key: keyof KeychainParameters, value: string) => {
+    // Handle boolean values specially
+    if (key === 'advancedBorderMode') {
+      onParameterChange(key, value === 'true')
+    } else {
     onParameterChange(key, parseFloat(value))
+    }
   }
+
+  // Sync line-specific border values with global values when not in advanced mode
+  useEffect(() => {
+    if (!parameters.advancedBorderMode) {
+      // Sync line-specific values with global values
+      if (parameters.line1BorderThickness !== parameters.borderThickness) {
+        onParameterChange('line1BorderThickness', parameters.borderThickness)
+      }
+      if (parameters.line2BorderThickness !== parameters.borderThickness) {
+        onParameterChange('line2BorderThickness', parameters.borderThickness)
+      }
+      if (parameters.line1BorderRoundedness !== parameters.borderRoundedness) {
+        onParameterChange('line1BorderRoundedness', parameters.borderRoundedness)
+      }
+      if (parameters.line2BorderRoundedness !== parameters.borderRoundedness) {
+        onParameterChange('line2BorderRoundedness', parameters.borderRoundedness)
+      }
+    }
+  }, [parameters.advancedBorderMode, parameters.borderThickness, parameters.borderRoundedness, onParameterChange])
 
 
 
@@ -126,17 +253,19 @@ export default function ParameterControls({
 
 
   const tabs = [
-    { id: 'text', label: 'Text', icon: Type },
-    { id: 'ring', label: 'Ring', icon: Eye },
-    { id: 'colors', label: 'Colors', icon: Palette },
-    { id: 'bulk', label: 'Bulk Order', icon: ListPlus }
-  ] as const
+    { id: 'text' as const, label: 'Text', icon: Type },
+    { id: 'ring' as const, label: 'Ring', icon: Eye },
+    { id: 'border' as const, label: 'Border', icon: Square },
+    { id: 'colors' as const, label: 'Colors', icon: Palette },
+    { id: 'bulk' as const, label: 'Bulk Order', icon: ListPlus },
+    ...(isAdminMode ? [{ id: 'admin' as const, label: 'Settings', icon: Settings }] : [])
+  ]
 
   return (
     <div className="bg-white flex flex-col">
       {/* Tab Navigation */}
       <div className="flex flex-col border-b border-gray-200 flex-shrink-0">
-        {/* Original three tabs */}
+        {/* First three tabs */}
         <div className="flex">
           {tabs.slice(0, 3).map((tab) => {
             const Icon = tab.icon
@@ -157,7 +286,7 @@ export default function ParameterControls({
           })}
         </div>
         
-        {/* Bulk order tab on separate row */}
+        {/* Colors and Bulk order tabs on second row */}
         <div className="flex">
           {tabs.slice(3).map((tab) => {
             const Icon = tab.icon
@@ -181,8 +310,8 @@ export default function ParameterControls({
 
       {/* Tab Content */}
       <div className="flex-1 p-6">
-        {/* Generate Button - Always visible at top (except bulk order tab) */}
-        {activeTab !== 'bulk' && (
+        {/* Generate Button - Always visible at top (except bulk order and admin tabs) */}
+        {activeTab !== 'bulk' && activeTab !== 'admin' && (
           <div className="mb-6">
             <button
               onClick={onGenerate}
@@ -258,20 +387,40 @@ export default function ParameterControls({
               <label htmlFor="font" className="text-sm font-medium text-gray-700">
                 Font:
               </label>
-              <select
-                id="font"
-                value={parameters.font}
-                onChange={handleFontSelect}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-              >
+              <div className="relative font-dropdown-container">
+                <button
+                  type="button"
+                  className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border bg-white text-left flex items-center justify-between"
+                  onClick={() => setIsFontDropdownOpen(!isFontDropdownOpen)}
+                >
+                  <span style={{ fontFamily: `"${getGoogleFontName(parameters.font)}", sans-serif` }}>
+                    {parameters.font}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                </button>
+                
+                {isFontDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                 {fonts
                   .filter((f) => f.fileUrl?.toLowerCase().endsWith('.typeface.json'))
                   .map((font) => (
-                    <option key={font.value} value={font.value}>
+                        <button
+                          key={font.value}
+                          type="button"
+                          className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                          onClick={() => {
+                            handleFontSelect({ target: { value: font.value } } as any)
+                            setIsFontDropdownOpen(false)
+                          }}
+                        >
+                          <span style={{ fontFamily: `"${getGoogleFontName(font.name)}", sans-serif` }}>
                       {font.name}
-                    </option>
+                          </span>
+                        </button>
                   ))}
-              </select>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="input-group">
@@ -507,21 +656,17 @@ export default function ParameterControls({
             <div className="space-y-4">
               <div className="input-group">
                 <label htmlFor="baseColor" className="text-sm font-medium text-gray-700">
-                  Base Color:
+                  Border Color:
                 </label>
                 <div className="flex items-center gap-3">
-                  <select
-                    id="baseColor"
-                    value={parameters.baseColor}
-                    onChange={(e) => onParameterChange('baseColor', e.target.value)}
-                    className="mt-1 block flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-                  >
-                    {colorOptions.map((color) => (
-                      <option key={color.value} value={color.value}>
-                        {color.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex-1">
+                    <ColorDropdown
+                      value={parameters.baseColor}
+                      onChange={(value) => onParameterChange('baseColor', value)}
+                      options={colorOptions}
+                      className="mt-1"
+                    />
+                  </div>
                   <div 
                     className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm mt-1"
                     style={{ backgroundColor: parameters.baseColor }}
@@ -535,18 +680,14 @@ export default function ParameterControls({
                     Text Color:
                   </label>
                   <div className="flex items-center gap-3">
-                    <select
-                      id="textColor"
-                      value={parameters.textColor}
-                      onChange={(e) => onParameterChange('textColor', e.target.value)}
-                      className="mt-1 block flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-                    >
-                      {colorOptions.map((color) => (
-                        <option key={color.value} value={color.value}>
-                          {color.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex-1">
+                      <ColorDropdown
+                        value={parameters.textColor}
+                        onChange={(value) => onParameterChange('textColor', value)}
+                        options={colorOptions}
+                        className="mt-1"
+                      />
+                    </div>
                     <div 
                       className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm mt-1"
                       style={{ backgroundColor: parameters.textColor }}
@@ -555,34 +696,114 @@ export default function ParameterControls({
                 </div>
               )}
             </div>
+          </div>
+        )}
 
-            {/* Admin-only: Border Controls */}
-            {isAdminMode && (
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-700">Border Settings</h4>
-                
-                <div className="input-group">
-                  <label htmlFor="borderThickness" className="text-sm font-medium text-gray-700">
-                    Border Thickness:
-                  </label>
-                  <div className="slider-container">
+        {/* Border Settings Tab */}
+        {activeTab === 'border' && (
+          <div className="space-y-4">
+            {/* Advanced Mode Toggle */}
+            <div className="border-b border-gray-200 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-800">Border Settings</h3>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-500">Basic</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
                     <input
-                      type="range"
-                      id="borderThickness"
-                      min="1"
-                      max="5"
-                      step="0.1"
-                      value={parameters.borderThickness}
-                      onChange={(e) => handleSliderChange('borderThickness', e.target.value)}
-                      className="flex-1"
+                      type="checkbox"
+                      checked={parameters.advancedBorderMode}
+                      onChange={(e) => handleSliderChange('advancedBorderMode', e.target.checked.toString())}
+                      className="sr-only peer"
                     />
-                    <span className="value-display">{parameters.borderThickness}mm</span>
-                  </div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                  <span className="text-xs text-gray-500">Advanced</span>
                 </div>
+              </div>
+              
+              {/* Global Border Settings - Only show in basic mode */}
+              {!parameters.advancedBorderMode && (
+                <div className="space-y-3">
+            <div className="input-group">
+              <label htmlFor="borderThickness" className="text-sm font-medium text-gray-700">
+                      Thickness:
+              </label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  id="borderThickness"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  value={parameters.borderThickness}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          handleSliderChange('borderThickness', value)
+                          // In basic mode, sync line-specific settings with global settings
+                          handleSliderChange('line1BorderThickness', value)
+                          handleSliderChange('line2BorderThickness', value)
+                        }}
+                  className="flex-1"
+                />
+                <span className="value-display">{parameters.borderThickness}mm</span>
+              </div>
+            </div>
 
+            <div className="input-group">
+              <label htmlFor="borderHeight" className="text-sm font-medium text-gray-700">
+                      Height:
+              </label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  id="borderHeight"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  value={parameters.borderHeight}
+                  onChange={(e) => handleSliderChange('borderHeight', e.target.value)}
+                  className="flex-1"
+                />
+                <span className="value-display">{parameters.borderHeight}mm</span>
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label htmlFor="borderRoundedness" className="text-sm font-medium text-gray-700">
+                      Roundedness:
+              </label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  id="borderRoundedness"
+                  min="0.1"
+                  max="4.0"
+                  step="0.1"
+                  value={parameters.borderRoundedness}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          handleSliderChange('borderRoundedness', value)
+                          // In basic mode, sync line-specific settings with global settings
+                          handleSliderChange('line1BorderRoundedness', value)
+                          handleSliderChange('line2BorderRoundedness', value)
+                        }}
+                  className="flex-1"
+                />
+                <span className="value-display">{parameters.borderRoundedness}</span>
+              </div>
+            </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Advanced Mode: Line-Specific Border Settings */}
+            {parameters.advancedBorderMode && (
+              <div className="space-y-4">
+                {/* Border Height - Show in advanced mode */}
                 <div className="input-group">
                   <label htmlFor="borderHeight" className="text-sm font-medium text-gray-700">
-                    Border Height:
+                    Height:
                   </label>
                   <div className="slider-container">
                     <input
@@ -599,22 +820,95 @@ export default function ParameterControls({
                   </div>
                 </div>
 
-                <div className="input-group">
-                  <label htmlFor="borderRoundedness" className="text-sm font-medium text-gray-700">
-                    Border Roundedness:
-                  </label>
-                  <div className="slider-container">
-                    <input
-                      type="range"
-                      id="borderRoundedness"
-                      min="0.1"
-                      max="4.0"
-                      step="0.1"
-                      value={parameters.borderRoundedness}
-                      onChange={(e) => handleSliderChange('borderRoundedness', e.target.value)}
-                      className="flex-1"
-                    />
-                    <span className="value-display">{parameters.borderRoundedness}</span>
+                <hr className="border-gray-200" />
+
+                <h3 className="text-sm font-semibold text-gray-800">Advanced Border Settings</h3>
+                
+                {/* First Line Border Settings */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-medium text-gray-600">First Line Border</h4>
+                  
+                  <div className="input-group">
+                    <label htmlFor="line1BorderThickness" className="text-sm font-medium text-gray-700">
+                      Thickness:
+                    </label>
+                    <div className="slider-container">
+                      <input
+                        type="range"
+                        id="line1BorderThickness"
+                        min="1"
+                        max="5"
+                        step="0.1"
+                        value={parameters.line1BorderThickness}
+                        onChange={(e) => handleSliderChange('line1BorderThickness', e.target.value)}
+                        className="flex-1"
+                      />
+                      <span className="value-display">{parameters.line1BorderThickness}mm</span>
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label htmlFor="line1BorderRoundedness" className="text-sm font-medium text-gray-700">
+                      Roundedness:
+                    </label>
+                    <div className="slider-container">
+                      <input
+                        type="range"
+                        id="line1BorderRoundedness"
+                        min="0.1"
+                        max="4.0"
+                        step="0.1"
+                        value={parameters.line1BorderRoundedness}
+                        onChange={(e) => handleSliderChange('line1BorderRoundedness', e.target.value)}
+                        className="flex-1"
+                      />
+                      <span className="value-display">{parameters.line1BorderRoundedness}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="border-gray-200" />
+
+                {/* Second Line Border Settings */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-medium text-gray-600">Second Line Border</h4>
+                  
+                  <div className="input-group">
+                    <label htmlFor="line2BorderThickness" className="text-sm font-medium text-gray-700">
+                      Thickness:
+                    </label>
+                    <div className="slider-container">
+                      <input
+                        type="range"
+                        id="line2BorderThickness"
+                        min="1"
+                        max="5"
+                        step="0.1"
+                        value={parameters.line2BorderThickness}
+                        onChange={(e) => handleSliderChange('line2BorderThickness', e.target.value)}
+                        className="flex-1"
+                      />
+                      <span className="value-display">{parameters.line2BorderThickness}mm</span>
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label htmlFor="line2BorderRoundedness" className="text-sm font-medium text-gray-700">
+                      Roundedness:
+                    </label>
+                    <div className="slider-container">
+                      <input
+                        type="range"
+                        id="line2BorderRoundedness"
+                        min="0.1"
+                        max="4.0"
+                        step="0.1"
+                        value={parameters.line2BorderRoundedness}
+                        onChange={(e) => handleSliderChange('line2BorderRoundedness', e.target.value)}
+                        className="flex-1"
+                      />
+                      <span className="value-display">{parameters.line2BorderRoundedness}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -881,37 +1175,27 @@ export default function ParameterControls({
                               ))}
                             </select>
                             
-                            <select
+                            <ColorDropdown
                               value={keychain.baseColor}
-                              onChange={(e) => {
+                              onChange={(value) => {
                                 setBulkKeychains(prev => prev.map(k => 
-                                  k.id === keychain.id ? { ...k, baseColor: e.target.value } : k
+                                  k.id === keychain.id ? { ...k, baseColor: value } : k
                                 ))
                               }}
-                              className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-                            >
-                              {colorOptions.map(color => (
-                                <option key={color.value} value={color.value}>
-                                  {color.name}
-                                </option>
-                              ))}
-                            </select>
+                              options={colorOptions}
+                              className="text-xs"
+                            />
                             
-                            <select
+                            <ColorDropdown
                               value={keychain.textColor}
-                              onChange={(e) => {
+                              onChange={(value) => {
                                 setBulkKeychains(prev => prev.map(k => 
-                                  k.id === keychain.id ? { ...k, textColor: e.target.value } : k
+                                  k.id === keychain.id ? { ...k, textColor: value } : k
                                 ))
                               }}
-                              className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-                            >
-                              {colorOptions.map(color => (
-                                <option key={color.value} value={color.value}>
-                                  {color.name}
-                                </option>
-                              ))}
-                            </select>
+                              options={colorOptions}
+                              className="text-xs"
+                            />
                           </div>
                         </div>
                       </div>
@@ -976,11 +1260,245 @@ export default function ParameterControls({
           </div>
         )}
 
+        {/* Admin Tab */}
+        {activeTab === 'admin' && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Settings Management</h3>
+              <p className="text-sm text-blue-700 mb-4">
+                Export your current keychain settings to a JSON file, or import settings from a previously exported file.
+              </p>
+              
+              <div className="space-y-3">
+                {/* Export Settings */}
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-800">Export Settings</h4>
+                    <p className="text-xs text-gray-600">Download current settings as JSON file</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const settingsData = {
+                        ...parameters,
+                        exportedAt: new Date().toISOString(),
+                        version: '1.0'
+                      }
+                      const blob = new Blob([JSON.stringify(settingsData, null, 2)], { type: 'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `keygo-settings-${new Date().toISOString().split('T')[0]}.json`
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                      URL.revokeObjectURL(url)
+                      showToast('Settings exported successfully!', 'success')
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Export
+                  </button>
+      </div>
+
+                {/* Import Settings */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-800">Import from File</h4>
+                      <p className="text-xs text-gray-600">Load settings from JSON file</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onload = (event) => {
+                              try {
+                                const importedSettings = JSON.parse(event.target?.result as string)
+                                // Validate that it's a valid settings object
+                                if (importedSettings.line1 !== undefined && importedSettings.font !== undefined) {
+                                  // Update all parameters
+                                  Object.keys(importedSettings).forEach(key => {
+                                    if (key !== 'exportedAt' && key !== 'version') {
+                                      onParameterChange(key as keyof KeychainParameters, importedSettings[key])
+                                    }
+                                  })
+                                  showToast('Settings imported successfully!', 'success')
+                                } else {
+                                  showToast('Invalid settings file format', 'error')
+                                }
+                              } catch (error) {
+                                showToast('Error reading settings file', 'error')
+                              }
+                            }
+                            reader.readAsText(file)
+                          }
+                        }}
+                        className="hidden"
+                        id="import-settings"
+                      />
+                      <label
+                        htmlFor="import-settings"
+                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+                      >
+                        Import File
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* JSON Paste Area */}
+                  <div className="p-3 bg-white rounded-lg border border-blue-200">
+                    <h4 className="text-sm font-medium text-gray-800 mb-2">Paste JSON Settings</h4>
+                    <p className="text-xs text-gray-600 mb-3">Paste your JSON settings directly into the text area below</p>
+                    <textarea
+                      placeholder="Paste your JSON settings here..."
+                      className="w-full h-32 p-3 text-xs font-mono border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                      onChange={(e) => {
+                        const jsonText = e.target.value.trim()
+                        if (jsonText) {
+                          try {
+                            const importedSettings = JSON.parse(jsonText)
+                            // Validate that it's a valid settings object
+                            if (importedSettings.line1 !== undefined && importedSettings.font !== undefined) {
+                              // Update all parameters
+                              Object.keys(importedSettings).forEach(key => {
+                                if (key !== 'exportedAt' && key !== 'version') {
+                                  onParameterChange(key as keyof KeychainParameters, importedSettings[key])
+                                }
+                              })
+                              showToast('Settings imported from paste!', 'success')
+                              e.target.value = '' // Clear the textarea
+                            } else {
+                              showToast('Invalid JSON format - missing required fields', 'error')
+                            }
+                          } catch (error) {
+                            // Don't show error for incomplete JSON while typing
+                            if (jsonText.length > 10) {
+                              showToast('Invalid JSON format', 'error')
+                            }
+                          }
+                        }
+                      }}
+                    />
+                    <div className="mt-2 text-xs text-gray-500">
+                      💡 Tip: Copy JSON from the preview below or from an exported file
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Current Settings Preview */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-800">Current Settings Preview</h3>
+                <button
+                  onClick={() => {
+                    const settingsJson = JSON.stringify({
+                      // Text settings
+                      line1: parameters.line1,
+                      line2: parameters.line2,
+                      font: parameters.font,
+                      fontUrl: parameters.fontUrl,
+                      textHeight: parameters.textHeight,
+                      textSize: parameters.textSize,
+                      fontSize: parameters.fontSize,
+                      line2FontSize: parameters.line2FontSize,
+                      lineSpacing: parameters.lineSpacing,
+                      textOffsetY: parameters.textOffsetY,
+                      
+                      // Border settings
+                      borderThickness: parameters.borderThickness,
+                      borderHeight: parameters.borderHeight,
+                      borderRoundedness: parameters.borderRoundedness,
+                      advancedBorderMode: parameters.advancedBorderMode,
+                      
+                      // Line-specific border settings
+                      line1BorderThickness: parameters.line1BorderThickness,
+                      line1BorderRoundedness: parameters.line1BorderRoundedness,
+                      line2BorderThickness: parameters.line2BorderThickness,
+                      line2BorderRoundedness: parameters.line2BorderRoundedness,
+                      
+                      // Ring settings
+                      showRing: parameters.showRing,
+                      outerDiameter: parameters.outerDiameter,
+                      innerDiameter: parameters.innerDiameter,
+                      ringHeight: parameters.ringHeight,
+                      ringX: parameters.ringX,
+                      ringY: parameters.ringY,
+                      
+                      // Color settings
+                      twoColors: parameters.twoColors,
+                      baseColor: parameters.baseColor,
+                      textColor: parameters.textColor
+                    }, null, 2)
+                    navigator.clipboard.writeText(settingsJson).then(() => {
+                      showToast('Settings copied to clipboard!', 'success')
+                    }).catch(() => {
+                      showToast('Failed to copy to clipboard', 'error')
+                    })
+                  }}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md transition-colors"
+                  title="Copy settings to clipboard"
+                >
+                  <Copy className="w-3 h-3" />
+                  Copy
+                </button>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <pre className="text-xs text-gray-600 overflow-auto max-h-40">
+                  {JSON.stringify({
+                    // Text settings
+                    line1: parameters.line1,
+                    line2: parameters.line2,
+                    font: parameters.font,
+                    fontUrl: parameters.fontUrl,
+                    textHeight: parameters.textHeight,
+                    textSize: parameters.textSize,
+                    fontSize: parameters.fontSize,
+                    line2FontSize: parameters.line2FontSize,
+                    lineSpacing: parameters.lineSpacing,
+                    textOffsetY: parameters.textOffsetY,
+                    
+                    // Border settings
+                    borderThickness: parameters.borderThickness,
+                    borderHeight: parameters.borderHeight,
+                    borderRoundedness: parameters.borderRoundedness,
+                    advancedBorderMode: parameters.advancedBorderMode,
+                    
+                    // Line-specific border settings
+                    line1BorderThickness: parameters.line1BorderThickness,
+                    line1BorderRoundedness: parameters.line1BorderRoundedness,
+                    line2BorderThickness: parameters.line2BorderThickness,
+                    line2BorderRoundedness: parameters.line2BorderRoundedness,
+                    
+                    // Ring settings
+                    showRing: parameters.showRing,
+                    outerDiameter: parameters.outerDiameter,
+                    innerDiameter: parameters.innerDiameter,
+                    ringHeight: parameters.ringHeight,
+                    ringX: parameters.ringX,
+                    ringY: parameters.ringY,
+                    
+                    // Color settings
+                    twoColors: parameters.twoColors,
+                    baseColor: parameters.baseColor,
+                    textColor: parameters.textColor
+                  }, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+
 
       </div>
 
-      {/* Add to List Section - Always visible at bottom (except bulk order tab) */}
-      {activeTab !== 'bulk' && (
+      {/* Add to List Section - Always visible at bottom (except bulk order and admin tabs) */}
+      {activeTab !== 'bulk' && activeTab !== 'admin' && (
       <div className="border-t border-gray-200 pt-6 mt-6 p-1">
         <div className="space-y-4">
           <button

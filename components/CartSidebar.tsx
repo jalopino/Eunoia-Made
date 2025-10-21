@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { X, ShoppingCart, Plus, Minus, Trash2, Download } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
-import KeychainPreview from './KeychainPreview'
 import CheckoutModal from './CheckoutModal'
 import { exportOBJ as generateRegularOBJ } from '@/utils/objExporter'
 import { exportRoundedKeychainOBJ as generateRoundedOBJ } from '@/utils/roundedObjExporter'
@@ -19,6 +18,31 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isAdminMode, setIsAdminMode] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+
+  // Color mapping function
+  const getColorName = (hexColor: string) => {
+    const colorMap: { [key: string]: string } = {
+      '#FFFFFF': 'Cotton White',
+      '#D3D3D3': 'Light Grey',
+      '#000000': 'Black',
+      '#FFB6C1': 'Sakura Pink',
+      '#FFC0CB': 'Pink',
+      '#FF0000': 'Red',
+      '#FFB347': 'Pastel Orange',
+      '#FFFF00': 'Yellow',
+      '#FFFFE0': 'Pastel Yellow',
+      '#98FB98': 'Pale Green',
+      '#98FF98': 'Mint Green',
+      '#006400': 'Dark Green',
+      '#008080': 'Teal',
+      '#ADD8E6': 'Light Blue',
+      '#000080': 'Navy Blue',
+      '#0F52BA': 'Sapphire Blue',
+      '#CCCCFF': 'Periwinkle',
+      '#967BB6': 'Lavender Purple'
+    }
+    return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
+  }
 
   // Check for admin query parameter
   useEffect(() => {
@@ -146,23 +170,17 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
                     {/* Preview */}
-                    <div className="flex-shrink-0 w-16 h-16 bg-gray-50 rounded-lg overflow-hidden">
-                      {isOpen && (
-                        <KeychainPreview 
-                          type={item.type} 
-                          parameters={item.parameters}
-                          className="w-full h-full"
-                        />
-                      )}
+                    <div className="flex-shrink-0 w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center">
+                      <span className="text-xs font-bold text-gray-600">KEYGO</span>
                     </div>
                     
                     {/* Item Details */}
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-gray-900 truncate">
-                        {item.name}
+                        {item.parameters.line1}{item.parameters.line2 ? ` ${item.parameters.line2}` : ''}
                       </h4>
                       <p className="text-xs text-gray-500">
-                        {item.type === 'regular' ? 'KEYGO' : 'KEYTONE'}
+                        {getColorName(item.parameters.textColor)}, {getColorName(item.parameters.baseColor)}
                       </p>
                       <p className="text-sm font-semibold text-gray-900">
                         ₱{item.price}

@@ -70,6 +70,11 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       borderThickness: keychainParameters.borderThickness,
       borderHeight: keychainParameters.borderHeight,
       borderRoundedness: keychainParameters.borderRoundedness,
+      advancedBorderMode: keychainParameters.advancedBorderMode,
+      line1BorderThickness: keychainParameters.line1BorderThickness,
+      line1BorderRoundedness: keychainParameters.line1BorderRoundedness,
+      line2BorderThickness: keychainParameters.line2BorderThickness,
+      line2BorderRoundedness: keychainParameters.line2BorderRoundedness,
       showRing: keychainParameters.showRing,
       outerDiameter: keychainParameters.outerDiameter,
       innerDiameter: keychainParameters.innerDiameter,
@@ -306,12 +311,21 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       const padding = keychainParameters.textSize * 0.2
       const textAreaWidth = measuredWidth + padding * 2
       const textAreaHeight = measuredHeight + padding * 2
-      const outerWidth = textAreaWidth + keychainParameters.borderThickness * 2
-      const outerHeight = textAreaHeight + keychainParameters.borderThickness * 2
+      
+      // Calculate separate border thicknesses and roundedness for each line
+      const line1BorderThickness = keychainParameters.line1BorderThickness
+      const line2BorderThickness = keychainParameters.line2BorderThickness
+      const line1BorderRoundedness = keychainParameters.line1BorderRoundedness
+      const line2BorderRoundedness = keychainParameters.line2BorderRoundedness
+      const maxBorderThickness = Math.max(line1BorderThickness, line2BorderThickness)
+      const maxBorderRoundedness = Math.max(line1BorderRoundedness, line2BorderRoundedness)
+      
+      const outerWidth = textAreaWidth + maxBorderThickness * 2
+      const outerHeight = textAreaHeight + maxBorderThickness * 2
 
       // Create base shape (full outer rounded rectangle)
       const baseShape = new THREE.Shape()
-      const baseRadius = Math.min(keychainParameters.borderThickness, outerWidth / 4, outerHeight / 4) * keychainParameters.borderRoundedness
+      const baseRadius = Math.min(maxBorderThickness, outerWidth / 4, outerHeight / 4) * maxBorderRoundedness
       
       baseShape.moveTo(-outerWidth/2 + baseRadius, -outerHeight/2)
       baseShape.lineTo(outerWidth/2 - baseRadius, -outerHeight/2)
@@ -323,9 +337,9 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       baseShape.lineTo(-outerWidth/2, -outerHeight/2 + baseRadius)
       baseShape.quadraticCurveTo(-outerWidth/2, -outerHeight/2, -outerWidth/2 + baseRadius, -outerHeight/2)
 
-      // Create border shape (ring around text area)
+      // Create border shape (ring around text area) with separate settings for each line
       const borderShape = new THREE.Shape()
-      const borderRadius = Math.min(keychainParameters.borderThickness, outerWidth / 4, outerHeight / 4) * keychainParameters.borderRoundedness
+      const borderRadius = Math.min(maxBorderThickness, outerWidth / 4, outerHeight / 4) * maxBorderRoundedness
       
       borderShape.moveTo(-outerWidth/2 + borderRadius, -outerHeight/2)
       borderShape.lineTo(outerWidth/2 - borderRadius, -outerHeight/2)
@@ -339,7 +353,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       
       // Create inner hole for text area
       const innerShape = new THREE.Path()
-      const innerRadius = Math.min(keychainParameters.borderThickness * 0.3, textAreaWidth / 6, textAreaHeight / 6) * keychainParameters.borderRoundedness
+      const innerRadius = Math.min(maxBorderThickness * 0.3, textAreaWidth / 6, textAreaHeight / 6) * maxBorderRoundedness
       
       innerShape.moveTo(-textAreaWidth/2 + innerRadius, -textAreaHeight/2)
       innerShape.lineTo(textAreaWidth/2 - innerRadius, -textAreaHeight/2)
@@ -547,9 +561,12 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           return
         }
 
-        // Build base using ClipperLib (same as real viewers)
+        // Build base using ClipperLib with separate border settings for each line
         const SCALE = 1000
         const subjectPaths: any[] = []
+        const line1Paths: any[] = []
+        const line2Paths: any[] = []
+        
         if (line1Shapes.length) {
           const g1tmp = new THREE.ShapeGeometry(line1Shapes)
           g1tmp.computeBoundingBox()
@@ -559,11 +576,17 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const dy1s = (keychainParameters.line2 ? spacing / 2 : 0) + keychainParameters.textOffsetY
           line1Shapes.forEach((sh: THREE.Shape) => {
             const outer = sh.getPoints(64).map(p => ({ X: Math.round((p.x - cx1s) * SCALE), Y: Math.round((p.y - cy1s + dy1s) * SCALE) }))
-            if (outer.length > 2) subjectPaths.push(outer)
+            if (outer.length > 2) {
+              subjectPaths.push(outer)
+              line1Paths.push(outer)
+            }
             if ((sh as any).holes && (sh as any).holes.length) {
               ;(sh as any).holes.forEach((h: THREE.Path) => {
                 const pts = h.getPoints(64).map(p => ({ X: Math.round((p.x - cx1s) * SCALE), Y: Math.round((p.y - cy1s + dy1s) * SCALE) }))
-                if (pts.length > 2) subjectPaths.push(pts)
+                if (pts.length > 2) {
+                  subjectPaths.push(pts)
+                  line1Paths.push(pts)
+                }
               })
             }
           })
@@ -577,11 +600,17 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           const dy2s = -spacing / 2 + keychainParameters.textOffsetY
           line2Shapes.forEach((sh: THREE.Shape) => {
             const outer = sh.getPoints(64).map(p => ({ X: Math.round((p.x - cx2s) * SCALE), Y: Math.round((p.y - cy2s + dy2s) * SCALE) }))
-            if (outer.length > 2) subjectPaths.push(outer)
+            if (outer.length > 2) {
+              subjectPaths.push(outer)
+              line2Paths.push(outer)
+            }
             if ((sh as any).holes && (sh as any).holes.length) {
               ;(sh as any).holes.forEach((h: THREE.Path) => {
                 const pts = h.getPoints(64).map(p => ({ X: Math.round((p.x - cx2s) * SCALE), Y: Math.round((p.y - cy2s + dy2s) * SCALE) }))
-                if (pts.length > 2) subjectPaths.push(pts)
+                if (pts.length > 2) {
+                  subjectPaths.push(pts)
+                  line2Paths.push(pts)
+                }
               })
             }
           })
@@ -589,47 +618,116 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
 
         setProgress(60)
         onProgressChange(60)
-        // Use ClipperLib to create proper border
+        // Use ClipperLib to create borders with separate thicknesses
         const { default: ClipperLib } = await import('clipper-lib')
 
-        // Union all contours first
-        const clipper = new ClipperLib.Clipper()
-        clipper.AddPaths(subjectPaths, ClipperLib.PolyType.ptSubject, true)
-        const union: any[] = []
-        clipper.Execute(
-          ClipperLib.ClipType.ctUnion,
-          union,
-          ClipperLib.PolyFillType.pftNonZero,
-          ClipperLib.PolyFillType.pftNonZero
-        )
+        // Create separate borders for each line
+        const allBorderShapes: THREE.Shape[] = []
+        
+        // Process line 1 with its specific border settings
+        if (line1Paths.length > 0) {
+          console.log('Processing line 1 with border thickness:', keychainParameters.line1BorderThickness, 'roundedness:', keychainParameters.line1BorderRoundedness)
+          const clipper1 = new ClipperLib.Clipper()
+          clipper1.AddPaths(line1Paths, ClipperLib.PolyType.ptSubject, true)
+          const union1: any[] = []
+          clipper1.Execute(
+            ClipperLib.ClipType.ctUnion,
+            union1,
+            ClipperLib.PolyFillType.pftNonZero,
+            ClipperLib.PolyFillType.pftNonZero
+          )
 
-        // Offset outward by borderThickness
-        const co = new ClipperLib.ClipperOffset(2, 2)
-        co.AddPaths(union, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
-        const offsetSolution: any[] = []
-        co.Execute(offsetSolution, Math.round(keychainParameters.borderThickness * SCALE))
+          const co1 = new ClipperLib.ClipperOffset(keychainParameters.line1BorderRoundedness * 2, keychainParameters.line1BorderRoundedness * 2)
+          co1.AddPaths(union1, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+          const offsetSolution1: any[] = []
+          co1.Execute(offsetSolution1, Math.round(keychainParameters.line1BorderThickness * SCALE))
 
-        // Convert back to THREE.Shape
-        const offsetShapes: THREE.Shape[] = []
-        offsetSolution.forEach((path: any[]) => {
-          const shape = new THREE.Shape()
-          path.forEach((pt: any, i: number) => {
-            const x = pt.X / SCALE
-            const y = pt.Y / SCALE
-            if (i === 0) shape.moveTo(x, y)
-            else shape.lineTo(x, y)
+          offsetSolution1.forEach((path: any[]) => {
+            const shape = new THREE.Shape()
+            path.forEach((pt: any, i: number) => {
+              const x = pt.X / SCALE
+              const y = pt.Y / SCALE
+              if (i === 0) shape.moveTo(x, y)
+              else shape.lineTo(x, y)
+            })
+            shape.closePath()
+            allBorderShapes.push(shape)
           })
-          shape.closePath()
-          offsetShapes.push(shape)
-        })
+        }
 
-        if (offsetShapes.length === 0) {
+        // Process line 2 with its specific border settings
+        if (line2Paths.length > 0) {
+          console.log('Processing line 2 with border thickness:', keychainParameters.line2BorderThickness, 'roundedness:', keychainParameters.line2BorderRoundedness)
+          const clipper2 = new ClipperLib.Clipper()
+          clipper2.AddPaths(line2Paths, ClipperLib.PolyType.ptSubject, true)
+          const union2: any[] = []
+          clipper2.Execute(
+            ClipperLib.ClipType.ctUnion,
+            union2,
+            ClipperLib.PolyFillType.pftNonZero,
+            ClipperLib.PolyFillType.pftNonZero
+          )
+
+          const co2 = new ClipperLib.ClipperOffset(keychainParameters.line2BorderRoundedness * 2, keychainParameters.line2BorderRoundedness * 2)
+          co2.AddPaths(union2, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+          const offsetSolution2: any[] = []
+          co2.Execute(offsetSolution2, Math.round(keychainParameters.line2BorderThickness * SCALE))
+
+          offsetSolution2.forEach((path: any[]) => {
+            const shape = new THREE.Shape()
+            path.forEach((pt: any, i: number) => {
+              const x = pt.X / SCALE
+              const y = pt.Y / SCALE
+              if (i === 0) shape.moveTo(x, y)
+              else shape.lineTo(x, y)
+            })
+            shape.closePath()
+            allBorderShapes.push(shape)
+          })
+        }
+
+        // Define max values for fallback
+        const maxBorderThickness = Math.max(keychainParameters.line1BorderThickness, keychainParameters.line2BorderThickness)
+        const maxBorderRoundedness = Math.max(keychainParameters.line1BorderRoundedness, keychainParameters.line2BorderRoundedness)
+
+        // If no separate borders were created, fall back to global border
+        if (allBorderShapes.length === 0) {
+          console.log('No separate borders created, using fallback with max thickness:', maxBorderThickness, 'max roundedness:', maxBorderRoundedness)
+          const clipper = new ClipperLib.Clipper()
+          clipper.AddPaths(subjectPaths, ClipperLib.PolyType.ptSubject, true)
+          const union: any[] = []
+          clipper.Execute(
+            ClipperLib.ClipType.ctUnion,
+            union,
+            ClipperLib.PolyFillType.pftNonZero,
+            ClipperLib.PolyFillType.pftNonZero
+          )
+
+          const co = new ClipperLib.ClipperOffset(maxBorderRoundedness * 2, maxBorderRoundedness * 2)
+          co.AddPaths(union, ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon)
+          const offsetSolution: any[] = []
+          co.Execute(offsetSolution, Math.round(maxBorderThickness * SCALE))
+
+          offsetSolution.forEach((path: any[]) => {
+            const shape = new THREE.Shape()
+            path.forEach((pt: any, i: number) => {
+              const x = pt.X / SCALE
+              const y = pt.Y / SCALE
+              if (i === 0) shape.moveTo(x, y)
+              else shape.lineTo(x, y)
+            })
+            shape.closePath()
+            allBorderShapes.push(shape)
+          })
+        }
+        
+        if (allBorderShapes.length === 0) {
           setBaseGeomState(null)
           return
         }
 
         const baseGeoms: THREE.BufferGeometry[] = []
-        offsetShapes.forEach(os => {
+        allBorderShapes.forEach(os => {
           const g = new THREE.ExtrudeGeometry(os, { depth: keychainParameters.borderHeight, bevelEnabled: false })
           baseGeoms.push(g)
         })
@@ -695,7 +793,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
     return () => { 
       cancelled = true 
     }
-  }, [keychainParameters.fontUrl, keychainParameters.line1, keychainParameters.line2, keychainParameters.textSize, keychainParameters.lineSpacing, keychainParameters.textOffsetY, keychainParameters.borderHeight, keychainParameters.borderThickness, keychainParameters.ringX, keychainParameters.ringY, keychainParameters.outerDiameter])
+  }, [keychainParameters.fontUrl, keychainParameters.line1, keychainParameters.line2, keychainParameters.textSize, keychainParameters.lineSpacing, keychainParameters.textOffsetY, keychainParameters.borderHeight, keychainParameters.borderThickness, keychainParameters.borderRoundedness, keychainParameters.advancedBorderMode, keychainParameters.line1BorderThickness, keychainParameters.line1BorderRoundedness, keychainParameters.line2BorderThickness, keychainParameters.line2BorderRoundedness, keychainParameters.ringX, keychainParameters.ringY, keychainParameters.outerDiameter])
 
   // Fallback merge function with proper cleanup
   function mergeBufferGeometriesFallback(geoms: THREE.BufferGeometry[]): THREE.BufferGeometry {
