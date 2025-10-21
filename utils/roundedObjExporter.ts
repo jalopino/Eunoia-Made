@@ -171,9 +171,9 @@ export async function exportRoundedKeychainOBJ(parameters: KeychainParameters, m
   }
 
   // Generate actual text geometry using font.generateShapes (same as original)
-  const line1Size = parameters.textSize
-  // Only use line2FontSize if admin mode is enabled and it's different from textSize
   const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+  const line1Size = isAdminMode && parameters.fontSize !== parameters.textSize ? parameters.fontSize : parameters.textSize
+  // Only use line2FontSize if admin mode is enabled and it's different from textSize
   const line2Size = isAdminMode && parameters.line2FontSize !== parameters.textSize ? parameters.line2FontSize : parameters.textSize
   const spacing = line1Size * parameters.lineSpacing
   const line1Shapes = parameters.line1 ? font.generateShapes(parameters.line1, line1Size) : []

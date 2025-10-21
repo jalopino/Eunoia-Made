@@ -232,15 +232,17 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       setProgress(40)
       onProgressChange(40)
       // Generate simplified text geometry for preview (reduced complexity)
-      const size = keychainParameters.textSize
-      const spacing = keychainParameters.textSize * keychainParameters.lineSpacing
+      const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+      const line1Size = isAdminMode && keychainParameters.fontSize !== keychainParameters.textSize ? keychainParameters.fontSize : keychainParameters.textSize
+      const line2Size = isAdminMode && keychainParameters.line2FontSize !== keychainParameters.textSize ? keychainParameters.line2FontSize : keychainParameters.textSize
+      const spacing = line1Size * keychainParameters.lineSpacing
       
       const textLineGeoms: THREE.BufferGeometry[] = []
       let measuredWidth = 0
       let measuredHeight = 0
       
       if (keychainParameters.line1) {
-        const line1Shapes = font.generateShapes(keychainParameters.line1, size)
+        const line1Shapes = font.generateShapes(keychainParameters.line1, line1Size)
         if (line1Shapes.length) {
           // Optimized geometry for preview - balanced quality/performance
           const g1 = new THREE.ExtrudeGeometry(line1Shapes, { 
@@ -265,7 +267,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
       }
       
       if (keychainParameters.line2) {
-        const line2Shapes = font.generateShapes(keychainParameters.line2, size)
+        const line2Shapes = font.generateShapes(keychainParameters.line2, line2Size)
         if (line2Shapes.length) {
           // Optimized geometry for preview - balanced quality/performance
           const g2 = new THREE.ExtrudeGeometry(line2Shapes, { 
@@ -492,9 +494,10 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
         setProgress(40)
         onProgressChange(40)
         // Generate text shapes
-        const line1Size = keychainParameters.textSize
-        // Only use line2FontSize if admin mode is enabled and it's different from textSize
+        // Use fontSize for first line if admin mode is enabled
         const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+        const line1Size = isAdminMode && keychainParameters.fontSize !== keychainParameters.textSize ? keychainParameters.fontSize : keychainParameters.textSize
+        // Only use line2FontSize if admin mode is enabled and it's different from textSize
         const line2Size = isAdminMode && keychainParameters.line2FontSize !== keychainParameters.textSize ? keychainParameters.line2FontSize : keychainParameters.textSize
         const spacing = line1Size * keychainParameters.lineSpacing
         const line1Shapes = keychainParameters.line1 ? font.generateShapes(keychainParameters.line1, line1Size) : []

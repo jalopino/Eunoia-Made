@@ -212,7 +212,7 @@ export default function ParameterControls({
                     value={parameters.line1}
                     onChange={(e) => {
                       const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
-                      if ((newValue.length + (parameters.line2?.length || 0)) <= 12) {
+                      if (isAdminMode || (newValue.length + (parameters.line2?.length || 0)) <= 12) {
                         onParameterChange('line1', newValue);
                         // Clear second line if first line is empty
                         if (newValue.length === 0) {
@@ -223,7 +223,7 @@ export default function ParameterControls({
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
                   />
                 <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
-                  {parameters.line1.length}/{12 - (parameters.line2?.length || 0)}
+                  {parameters.line1.length}{!isAdminMode && `/${12 - (parameters.line2?.length || 0)}`}
                 </span>
               </div>
             </div>
@@ -240,7 +240,7 @@ export default function ParameterControls({
                     onChange={(e) => {
                       const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
                       // Only allow input if first line has content
-                      if (parameters.line1.length > 0 && (newValue.length + parameters.line1.length) <= 12) {
+                      if (parameters.line1.length > 0 && (isAdminMode || (newValue.length + parameters.line1.length) <= 12)) {
                         onParameterChange('line2', newValue);
                       }
                     }}
@@ -249,7 +249,7 @@ export default function ParameterControls({
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
                   />
                 <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
-                  {parameters.line2?.length || 0}/{12 - parameters.line1.length}
+                  {parameters.line2?.length || 0}{!isAdminMode && `/${12 - parameters.line1.length}`}
                 </span>
               </div>
             </div>
@@ -292,6 +292,28 @@ export default function ParameterControls({
                 <span className="value-display">{parameters.lineSpacing}</span>
               </div>
             </div>
+
+            {/* Admin-only: First Line Font Size */}
+            {isAdminMode && (
+              <div className="input-group">
+                <label htmlFor="fontSize" className="text-sm font-medium text-gray-700">
+                  First Line Font Size:
+                </label>
+                <div className="slider-container">
+                  <input
+                    type="range"
+                    id="fontSize"
+                    min="1"
+                    max="24"
+                    step="1"
+                    value={parameters.fontSize}
+                    onChange={(e) => handleSliderChange('fontSize', e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="value-display">{parameters.fontSize}</span>
+                </div>
+              </div>
+            )}
 
             {/* Admin-only: Second Line Font Size */}
             {isAdminMode && (

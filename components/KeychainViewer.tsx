@@ -109,7 +109,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
 
     const measuredHeightLine1 = line1Bounds.height
     const measuredHeightLine2 = parameters.line2 ? line2Bounds.height : 0
-    const lineGap = parameters.line2 ? (parameters.textSize * parameters.lineSpacing) : 0
+    const lineGap = parameters.line2 ? (parameters.fontSize * parameters.lineSpacing) : 0
     const measuredTotalHeight = parameters.line2
       ? (measuredHeightLine1 + measuredHeightLine2 + lineGap)
       : measuredHeightLine1
@@ -254,9 +254,9 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
         }
 
         // Generate shapes for lines (no in-place translate on shapes)
-        const line1Size = parameters.textSize
-        // Only use line2FontSize if admin mode is enabled and it's different from textSize
         const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+        const line1Size = isAdminMode && parameters.fontSize !== parameters.textSize ? parameters.fontSize : parameters.textSize
+        // Only use line2FontSize if admin mode is enabled and it's different from textSize
         const line2Size = isAdminMode && parameters.line2FontSize !== parameters.textSize ? parameters.line2FontSize : parameters.textSize
         const spacing = line1Size * parameters.lineSpacing
         onProgressChange(40)
@@ -481,17 +481,17 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
         <Center position={[0, 0, parameters.borderHeight]}>
           {parameters.line2 ? (
             <>
-              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.textSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, parameters.textSize * parameters.lineSpacing / 4, 0]}>
+              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.fontSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, parameters.fontSize * parameters.lineSpacing / 4, 0]}>
                 {parameters.line1}
                 <meshStandardMaterial color={textColor} />
               </Text3D>
-              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.textSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, -parameters.textSize * parameters.lineSpacing / 4, 0]}>
+              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.line2FontSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, -parameters.fontSize * parameters.lineSpacing / 4, 0]}>
                 {parameters.line2}
                 <meshStandardMaterial color={textColor} />
               </Text3D>
             </>
           ) : (
-            <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.textSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false}>
+            <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.fontSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false}>
               {parameters.line1}
               <meshStandardMaterial color={textColor} />
             </Text3D>

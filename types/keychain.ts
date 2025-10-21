@@ -6,6 +6,7 @@ export interface KeychainParameters {
   fontUrl?: string
   textHeight: number
   textSize: number
+  fontSize: number // Admin-only: First line font size
   line2FontSize: number
   lineSpacing: number
   textOffsetY: number // Admin-only: Y position offset for text
@@ -37,6 +38,7 @@ export const defaultParameters: KeychainParameters = {
   fontUrl: '/fonts/Rethink.typeface.json',
   textHeight: 1.5,
   textSize: 12,
+  fontSize: 12,
   line2FontSize: 12,
   lineSpacing: 1.2,
   textOffsetY: 0,
@@ -68,6 +70,7 @@ export const roundedDefaultParameters: KeychainParameters = {
   fontUrl: '/fonts/Rethink.typeface.json',
   textHeight: 1.5,
   textSize: 12,
+  fontSize: 12,
   line2FontSize: 12,
   lineSpacing: 1.2,
   textOffsetY: 0,
@@ -109,7 +112,9 @@ export const defaultFonts: FontOption[] = [
   { name: 'Audiowide', value: 'Audiowide', fileUrl: '/fonts/Audiowide.typeface.json' },
   { name: 'Archivo', value: 'Archivo', fileUrl: '/fonts/Archivo.typeface.json' },
   { name: 'Borel', value: 'Borel', fileUrl: '/fonts/Borel.typeface.json' },
-  { name: 'Caprasimo', value: 'Caprasimo', fileUrl: '/fonts/Caprasimo.typeface.json' }
+  { name: 'Caprasimo', value: 'Caprasimo', fileUrl: '/fonts/Caprasimo.typeface.json' },
+  { name: 'Cherry Bomb', value: 'CherryBomb', fileUrl: '/fonts/CherryBomb.typeface.json' },
+  { name: 'Pure Blossom', value: 'PureBlossom', fileUrl: '/fonts/PureBlossom.typeface.json' }
 ]
 
 export interface ColorOption {

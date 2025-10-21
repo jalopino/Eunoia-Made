@@ -212,7 +212,7 @@ export default function RoundedParameterControls({
                   value={parameters.line1}
                   onChange={(e) => {
                     const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
-                    if ((newValue.length + (parameters.line2?.length || 0)) <= 12) {
+                    if (isAdminMode || (newValue.length + (parameters.line2?.length || 0)) <= 12) {
                       onParameterChange('line1', newValue);
                       // Clear second line if first line is empty
                       if (newValue.length === 0) {
@@ -223,7 +223,7 @@ export default function RoundedParameterControls({
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
                 />
                 <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
-                  {parameters.line1.length}/{12 - (parameters.line2?.length || 0)}
+                  {parameters.line1.length}{!isAdminMode && `/${12 - (parameters.line2?.length || 0)}`}
                 </span>
               </div>
             </div>

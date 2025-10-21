@@ -133,13 +133,13 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
     // Fallback to estimated dimensions if no measurements available
     if (measuredWidth === 0) {
       const fontFactor = getFontFactor(parameters.font)
-      const line1Width = parameters.line1.length * parameters.textSize * fontFactor
-      const line2Width = parameters.line2 ? parameters.line2.length * parameters.textSize * fontFactor : 0
+      const line1Width = parameters.line1.length * parameters.fontSize * fontFactor
+      const line2Width = parameters.line2 ? parameters.line2.length * parameters.line2FontSize * fontFactor : 0
       measuredWidth = Math.max(line1Width, line2Width)
     }
     if (measuredHeight === 0) {
-      const lineHeight = parameters.textSize * 0.8
-      const spacing = parameters.line2 ? parameters.textSize * parameters.lineSpacing : 0
+      const lineHeight = parameters.fontSize * 0.8
+      const spacing = parameters.line2 ? parameters.fontSize * parameters.lineSpacing : 0
       measuredHeight = parameters.line2 ? (lineHeight * 2 + spacing) : lineHeight
     }
 
@@ -240,7 +240,7 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
 
       // Calculate ring position
       const initialX = -(outerWidth/2 + parameters.outerDiameter/4)
-      const firstLineY = parameters.line2 ? parameters.textSize * parameters.lineSpacing / 2 : 0
+      const firstLineY = parameters.line2 ? parameters.fontSize * parameters.lineSpacing / 2 : 0
       ringPos = [
         initialX + parameters.ringX,
         firstLineY + parameters.ringY,
@@ -285,14 +285,15 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
         }
 
         // Generate text geometry
-        const size = parameters.textSize
-        const spacing = parameters.textSize * parameters.lineSpacing
+        const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
+        const line1Size = isAdminMode && parameters.fontSize !== parameters.textSize ? parameters.fontSize : parameters.textSize
+        const spacing = line1Size * parameters.lineSpacing
         onProgressChange(70)
         
         const textLineGeoms: THREE.BufferGeometry[] = []
         
         if (parameters.line1) {
-          const line1Shapes = font.generateShapes(parameters.line1, size)
+          const line1Shapes = font.generateShapes(parameters.line1, line1Size)
           if (line1Shapes.length) {
             const g1 = new THREE.ExtrudeGeometry(line1Shapes, { 
               depth: Math.abs(parameters.textHeight), 
@@ -310,7 +311,6 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
         
         if (parameters.line2) {
           // Only use line2FontSize if admin mode is enabled and it's different from textSize
-          const isAdminMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('pass') === 'eunoia'
           const line2Size = isAdminMode && parameters.line2FontSize !== parameters.textSize ? parameters.line2FontSize : parameters.textSize
           const line2Shapes = font.generateShapes(parameters.line2, line2Size)
           if (line2Shapes.length) {
@@ -446,17 +446,17 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
         <Center position={[0, 0, parameters.borderHeight]}>
           {parameters.line2 ? (
             <>
-              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.textSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, parameters.textSize * parameters.lineSpacing / 4, 0]}>
+              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.fontSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, parameters.fontSize * parameters.lineSpacing / 4, 0]}>
                 {parameters.line1}
                 <meshStandardMaterial color={textColor} />
               </Text3D>
-              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.textSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, -parameters.textSize * parameters.lineSpacing / 4, 0]}>
+              <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.line2FontSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false} position={[0, -parameters.fontSize * parameters.lineSpacing / 4, 0]}>
                 {parameters.line2}
                 <meshStandardMaterial color={textColor} />
               </Text3D>
             </>
           ) : (
-            <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.textSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false}>
+            <Text3D font={parameters.fontUrl || '/fonts/Borel.typeface.json'} size={parameters.fontSize} height={Math.abs(parameters.textHeight)} curveSegments={8} bevelEnabled={false}>
               {parameters.line1}
               <meshStandardMaterial color={textColor} />
             </Text3D>
