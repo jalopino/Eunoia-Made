@@ -211,7 +211,7 @@ export default function ParameterControls({
                     id="line1"
                     value={parameters.line1}
                     onChange={(e) => {
-                      const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
+                      const newValue = isAdminMode ? e.target.value : e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
                       if (isAdminMode || (newValue.length + (parameters.line2?.length || 0)) <= 12) {
                         onParameterChange('line1', newValue);
                         // Clear second line if first line is empty
@@ -238,7 +238,7 @@ export default function ParameterControls({
                     id="line2"
                     value={parameters.line2}
                     onChange={(e) => {
-                      const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
+                      const newValue = isAdminMode ? e.target.value : e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
                       // Only allow input if first line has content
                       if (parameters.line1.length > 0 && (isAdminMode || (newValue.length + parameters.line1.length) <= 12)) {
                         onParameterChange('line2', newValue);

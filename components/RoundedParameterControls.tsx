@@ -211,7 +211,7 @@ export default function RoundedParameterControls({
                   id="line1"
                   value={parameters.line1}
                   onChange={(e) => {
-                    const newValue = e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
+                    const newValue = isAdminMode ? e.target.value : e.target.value.replace(/[^a-zA-Z0-9\s'"]/g, '');
                     if (isAdminMode || (newValue.length + (parameters.line2?.length || 0)) <= 12) {
                       onParameterChange('line1', newValue);
                       // Clear second line if first line is empty
