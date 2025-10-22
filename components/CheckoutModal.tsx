@@ -134,13 +134,20 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
       setSubmitProgress(80)
 
+      // Add 5-minute timeout to prevent hanging requests
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minutes
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         throw new Error('Failed to submit order')
@@ -152,9 +159,17 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       clearCart()
       onClose()
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting order:', error)
-      showToast('Failed to submit order. Please try again.', 'error')
+      
+      // Handle specific timeout errors
+      if (error.name === 'AbortError') {
+        showToast('Request timed out after 5 minutes. Please try again with fewer items or contact support.', 'error')
+      } else if (error.message?.includes('Failed to submit order')) {
+        showToast('Failed to submit order. Please try again.', 'error')
+      } else {
+        showToast('An unexpected error occurred. Please try again.', 'error')
+      }
     } finally {
       setIsSubmitting(false)
       setSubmitProgress(0)

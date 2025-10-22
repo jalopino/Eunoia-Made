@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const webhookUrl = 'https://workflows.eunoiadigitalph.com/webhook/keygo-order'
     
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minute timeout
     
     try {
       // Forward important headers to the webhook
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       
       if (fetchError.name === 'AbortError') {
         return NextResponse.json(
-          { success: false, error: 'Request timed out. Please try again or contact support.' },
+          { success: false, error: 'Request timed out after 5 minutes. Please try again with fewer items or contact support.' },
           { status: 408 }
         )
       }

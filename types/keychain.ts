@@ -112,9 +112,9 @@ export const defaultFonts: FontOption[] = [
   { name: 'Audiowide', value: 'Audiowide', fileUrl: '/fonts/Audiowide.typeface.json' },
   { name: 'Archivo', value: 'Archivo', fileUrl: '/fonts/Archivo.typeface.json' },
   { name: 'Borel', value: 'Borel', fileUrl: '/fonts/Borel.typeface.json' },
-  { name: 'Caprasimo', value: 'Caprasimo', fileUrl: '/fonts/Caprasimo.typeface.json' },
-  { name: 'Cherry Bomb', value: 'CherryBomb', fileUrl: '/fonts/CherryBomb.typeface.json' },
-  { name: 'Pure Blossom', value: 'PureBlossom', fileUrl: '/fonts/PureBlossom.typeface.json' }
+  { name: 'Caprasimo', value: 'Caprasimo', fileUrl: '/fonts/Caprasimo.typeface.json' }
+  // { name: 'Cherry Bomb', value: 'CherryBomb', fileUrl: '/fonts/CherryBomb.typeface.json' },
+  // { name: 'Pure Blossom', value: 'PureBlossom', fileUrl: '/fonts/PureBlossom.typeface.json' }
 ]
 
 export interface ColorOption {
@@ -124,6 +124,7 @@ export interface ColorOption {
 
 export const colorOptions: ColorOption[] = [
   { name: 'Cotton White', value: '#FFFFFF' },
+  { name: 'Black', value: '#000000' },
   { name: 'Fossil Grey', value: '#C8C8C8' },
   { name: 'Charcoal Black', value: '#36454F' },
   { name: 'Earth Brown', value: '#8B4513' },
