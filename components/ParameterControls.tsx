@@ -5,6 +5,7 @@ import { KeychainParameters, FontOption, defaultFonts, colorOptions } from '@/ty
 import { RotateCcw, X, Type, Palette, Eye, ListPlus } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import ColorDropdown from './ColorDropdown'
+import FontDropdown from './FontDropdown'
 
 
 interface ParameterControlsProps {
@@ -79,11 +80,9 @@ export default function ParameterControls({
 
 
 
-  const handleFontSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value
-    const selected = fonts.find(f => f.value === val || f.name === val)
+  const setFontByName = (fontName: string) => {
+    const selected = fonts.find(f => f.name === fontName || f.value === fontName)
     if (selected) {
-      // Only allow typeface.json fonts
       onParameterChange('font', selected.name)
       const url = selected.fileUrl || selected.value
       if (url && url.toLowerCase().endsWith('.typeface.json')) {
@@ -92,7 +91,7 @@ export default function ParameterControls({
         onParameterChange('fontUrl', '')
       }
     } else {
-      onParameterChange('font', val)
+      onParameterChange('font', fontName)
       onParameterChange('fontUrl', '')
     }
   }
@@ -232,20 +231,11 @@ export default function ParameterControls({
               <label htmlFor="font" className="text-sm font-medium text-gray-700">
                 Font:
               </label>
-              <select
+              <FontDropdown
                 id="font"
                 value={parameters.font}
-                onChange={handleFontSelect}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-              >
-                {fonts
-                  .filter((f) => f.fileUrl?.toLowerCase().endsWith('.typeface.json'))
-                  .map((font) => (
-                    <option key={font.value} value={font.value}>
-                      {font.name}
-                    </option>
-                  ))}
-              </select>
+                onChange={setFontByName}
+              />
             </div>
 
             <div className="input-group">
