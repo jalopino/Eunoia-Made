@@ -443,10 +443,10 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             </form>
 
             {/* Right Side Content - Desktop */}
-            <div className="mt-6 lg:mt-0 lg:w-96 space-y-6">
-              <div>
+            <div className="mt-6 lg:mt-0 lg:w-96 space-y-6 flex flex-col max-h-[70vh]">
+              <div className="flex-1 flex flex-col min-h-0">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">Selected Keychains</h3>
-                <div className="space-y-3">
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                   {(showAllKeychains ? items : items.slice(0, 1)).map((item) => (
                     <div key={item.id} className="p-3 border border-gray-200 rounded-lg">
                       <div className="flex items-start gap-3">
@@ -493,7 +493,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
               {/* Receipt Upload - Right Side */}
               {activeQR && (
-                <div>
+                <div className="flex-shrink-0">
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">Payment Receipt</h3>
                   <div className="relative">
                     <input
@@ -528,7 +528,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               )}
 
               {items.length > 0 && (
-                <div className="border-t pt-4">
+                <div className="flex-shrink-0 border-t pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-gray-800">
                       Total ({getTotalItems()} {getTotalItems() === 1 ? 'piece' : 'pieces'})
@@ -550,7 +550,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 type="submit"
                 form="checkout-form"
                 disabled={isSubmitting || !activeQR || !selectedFile}
-                className={`mt-2 w-full bg-[#FFB81C] text-white py-3 px-4 rounded-lg transition-colors font-medium relative overflow-hidden ${
+                className={`flex-shrink-0 mt-2 w-full bg-[#FFB81C] text-white py-3 px-4 rounded-lg transition-colors font-medium relative overflow-hidden ${
                   isSubmitting || !activeQR || !selectedFile
                     ? 'opacity-75 cursor-not-allowed'
                     : 'hover:bg-[#FFB81C]'

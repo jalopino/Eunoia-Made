@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { X, ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
-import KeychainPreview from './KeychainPreview'
 
 interface CartSidebarProps {
   isOpen: boolean
@@ -13,6 +12,32 @@ interface CartSidebarProps {
 export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+
+  // Helper function to convert hex colors to readable names
+  const colorMap: { [key: string]: string } = {
+    '#FFFFFF': 'Cotton White',
+    '#D3D3D3': 'Light Grey',
+    '#000000': 'Black',
+    '#FFB6C1': 'Sakura Pink',
+    '#FFC0CB': 'Pink',
+    '#FF0000': 'Red',
+    '#FFB347': 'Pastel Orange',
+    '#FFFF00': 'Yellow',
+    '#FFFFE0': 'Pastel Yellow',
+    '#98FB98': 'Pale Green',
+    '#98FF98': 'Mint Green',
+    '#006400': 'Dark Green',
+    '#008080': 'Teal',
+    '#ADD8E6': 'Light Blue',
+    '#000080': 'Navy Blue',
+    '#0F52BA': 'Sapphire Blue',
+    '#CCCCFF': 'Periwinkle',
+    '#967BB6': 'Lavender Purple'
+  }
+
+  const getColorName = (hexColor: string) => {
+    return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
+  }
 
   if (!isOpen) return null
 
@@ -70,18 +95,18 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
               <div className="space-y-3">
                 {items.map((item) => (
                   <div key={item.id} className="flex items-center space-x-4 p-3 border border-gray-200 rounded-lg">
-                    {/* Preview */}
-                    <div className="flex-shrink-0 w-16 h-16 bg-gray-50 rounded-lg overflow-hidden">
-                      <KeychainPreview type={item.type} />
-                    </div>
-                    
                     {/* Item Details */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                      <h4 className="text-sm font-medium text-gray-900">
                         {item.name}
                       </h4>
                       <p className="text-xs text-gray-500">
-                        {item.type === 'regular' ? 'KEYGO' : 'KEYTONE'}
+                        {item.parameters.line1 || 'No text'}
+                        {item.parameters.line2 && `, ${item.parameters.line2}`}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        [{getColorName(item.parameters.baseColor)}]
+                        {item.parameters.twoColors && `, [${getColorName(item.parameters.textColor)}]`}
                       </p>
                       <p className="text-sm font-semibold text-gray-900">
                         ₱{item.price}
@@ -122,7 +147,11 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
               {/* Clear Cart Button */}
               {items.length > 0 && (
                 <button
-                  onClick={clearCart}
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to clear your cart? This action cannot be undone.')) {
+                      clearCart()
+                    }
+                  }}
                   className="w-full text-sm text-gray-500 hover:text-red-600 py-2"
                 >
                   Clear Cart
