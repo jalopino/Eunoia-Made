@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/contexts/ToastContext'
+import { getColorName } from '@/utils/colors'
 import { exportOBJ as generateRegularOBJ } from '@/utils/objExporter'
 import { exportRoundedKeychainOBJ as generateRoundedOBJ } from '@/utils/roundedObjExporter'
 import JSZip from 'jszip'
@@ -19,31 +20,6 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { items, clearCart } = useCart()
   const { showToast } = useToast()
   
-  // Helper function to convert hex colors to readable names (same as individual generators)
-  const colorMap: { [key: string]: string } = {
-    '#FFFFFF': 'Cotton White',
-    '#D3D3D3': 'Light Grey',
-    '#000000': 'Black',
-    '#FFB6C1': 'Sakura Pink',
-    '#FFC0CB': 'Pink',
-    '#FF0000': 'Red',
-    '#FFB347': 'Pastel Orange',
-    '#FFFF00': 'Yellow',
-    '#FFFFE0': 'Pastel Yellow',
-    '#98FB98': 'Pale Green',
-    '#98FF98': 'Mint Green',
-    '#006400': 'Dark Green',
-    '#008080': 'Teal',
-    '#ADD8E6': 'Light Blue',
-    '#000080': 'Navy Blue',
-    '#0F52BA': 'Sapphire Blue',
-    '#CCCCFF': 'Periwinkle',
-    '#967BB6': 'Lavender Purple'
-  }
-
-  const getColorName = (hexColor: string) => {
-    return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
-  }
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitProgress, setSubmitProgress] = useState(0)

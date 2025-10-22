@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { KeychainParameters, FontOption, defaultFonts, colorOptions } from '@/types/keychain'
 import { RotateCcw, X, Type, Palette, Eye, ListPlus } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
+import { getColorName } from '@/utils/colors'
+import ColorDropdown from './ColorDropdown'
 
 
 interface RoundedParameterControlsProps {
@@ -41,33 +43,6 @@ export default function RoundedParameterControls({
     }
   }, [])
   
-  // Helper function to convert hex colors to readable names
-  const getColorName = (hexColor: string) => {
-    if (!hexColor) return hexColor // Handle undefined/null values
-    
-    const colorMap: { [key: string]: string } = {
-      '#FFFFFF': 'Cotton White',
-      '#D3D3D3': 'Light Grey',
-      '#000000': 'Black',
-      '#FFB6C1': 'Sakura Pink',
-      '#FFC0CB': 'Pink',
-      '#FF0000': 'Red',
-      '#FFB347': 'Pastel Orange',
-      '#FFFF00': 'Yellow',
-      '#FFFFE0': 'Pastel Yellow',
-      '#98FB98': 'Pale Green',
-      '#98FF98': 'Mint Green',
-      '#006400': 'Dark Green',
-      '#008080': 'Teal',
-      '#ADD8E6': 'Light Blue',
-      '#000080': 'Navy Blue',
-      '#0F52BA': 'Sapphire Blue',
-      '#CCCCFF': 'Periwinkle',
-      '#967BB6': 'Lavender Purple',
-      '#967bb6': 'Lavender Purple'
-    }
-    return colorMap[hexColor.toUpperCase()] || colorMap[hexColor] || hexColor
-  }
   const [fonts] = useState<FontOption[]>(defaultFonts)
   const [activeTab, setActiveTab] = useState<'text' | 'ring' | 'colors' | 'bulk'>('text')
   const [bulkNames, setBulkNames] = useState<string>('')
@@ -497,24 +472,12 @@ export default function RoundedParameterControls({
                 <label htmlFor="baseColor" className="text-sm font-medium text-gray-700">
                   Base Color:
                 </label>
-                <div className="flex items-center gap-3">
-                  <select
-                    id="baseColor"
-                    value={parameters.baseColor}
-                    onChange={(e) => onParameterChange('baseColor', e.target.value)}
-                    className="mt-1 block flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-                  >
-                    {colorOptions.map((color) => (
-                      <option key={color.value} value={color.value}>
-                        {color.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div 
-                    className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm mt-1"
-                    style={{ backgroundColor: parameters.baseColor }}
-                  />
-                </div>
+                <ColorDropdown
+                  id="baseColor"
+                  value={parameters.baseColor}
+                  onChange={(value) => onParameterChange('baseColor', value)}
+                  label="Base Color"
+                />
               </div>
 
               {parameters.twoColors && (
@@ -522,24 +485,12 @@ export default function RoundedParameterControls({
                   <label htmlFor="textColor" className="text-sm font-medium text-gray-700">
                     Text Color:
                   </label>
-                  <div className="flex items-center gap-3">
-                    <select
-                      id="textColor"
-                      value={parameters.textColor}
-                      onChange={(e) => onParameterChange('textColor', e.target.value)}
-                      className="mt-1 block flex-1 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm px-3 py-2 border"
-                    >
-                      {colorOptions.map((color) => (
-                        <option key={color.value} value={color.value}>
-                          {color.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div 
-                      className="w-8 h-8 rounded-full border-2 border-gray-300 shadow-sm mt-1"
-                      style={{ backgroundColor: parameters.textColor }}
-                    />
-                  </div>
+                  <ColorDropdown
+                    id="textColor"
+                    value={parameters.textColor}
+                    onChange={(value) => onParameterChange('textColor', value)}
+                    label="Text Color"
+                  />
                 </div>
               )}
             </div>
@@ -672,37 +623,25 @@ export default function RoundedParameterControls({
                           ))}
                         </select>
                         
-                        <select
+                        <ColorDropdown
+                          id={`bulk-base-${keychain.id}`}
                           value={keychain.baseColor}
-                          onChange={(e) => {
+                          onChange={(value) => {
                             setBulkKeychains(prev => prev.map(k => 
-                              k.id === keychain.id ? { ...k, baseColor: e.target.value } : k
+                              k.id === keychain.id ? { ...k, baseColor: value } : k
                             ))
                           }}
-                          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-                        >
-                          {colorOptions.map(color => (
-                            <option key={color.value} value={color.value}>
-                              {color.name}
-                            </option>
-                          ))}
-                        </select>
+                        />
                         
-                        <select
+                        <ColorDropdown
+                          id={`bulk-text-${keychain.id}`}
                           value={keychain.textColor}
-                          onChange={(e) => {
+                          onChange={(value) => {
                             setBulkKeychains(prev => prev.map(k => 
-                              k.id === keychain.id ? { ...k, textColor: e.target.value } : k
+                              k.id === keychain.id ? { ...k, textColor: value } : k
                             ))
                           }}
-                          className="w-full px-1 py-1 border border-gray-300 rounded text-xs"
-                        >
-                          {colorOptions.map(color => (
-                            <option key={color.value} value={color.value}>
-                              {color.name}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     </div>
                   ))}
