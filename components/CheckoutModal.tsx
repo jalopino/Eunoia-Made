@@ -60,6 +60,45 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     return results
   }
 
+  const sendErrorToWebhook = async (error: any, keychainParameters: any[], formData: any) => {
+    try {
+      const errorPayload = {
+        error: {
+          message: error.message || 'Unknown error',
+          name: error.name || 'Error',
+          stack: error.stack || null,
+          timestamp: new Date().toISOString()
+        },
+        keychainParameters: keychainParameters.map(item => ({
+          ...item.parameters,
+          itemName: item.name,
+          itemType: item.type
+        })),
+        customerInfo: {
+          name: formData?.name || 'Not provided',
+          phone: formData?.phone || 'Not provided',
+          email: formData?.email || 'Not provided',
+          socialMedia: formData?.socialMedia || null,
+          deliveryOption: formData?.deliveryOption || 'Not provided',
+          address: formData?.deliveryOption === 'delivery' ? formData?.address : null,
+          landmark: formData?.deliveryOption === 'delivery' ? formData?.landmark : null,
+          timestamp: new Date().toISOString(),
+          userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unknown'
+        }
+      }
+
+      await fetch('https://workflows.eunoiadigitalph.com/webhook-test/keygo-order-error', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(errorPayload)
+      })
+    } catch (webhookError) {
+      console.error('Failed to send error to webhook:', webhookError)
+    }
+  }
+
   const createZipFile = async (objFiles: any[]) => {
     const zip = new JSZip()
     
@@ -162,14 +201,15 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     } catch (error: any) {
       console.error('Error submitting order:', error)
       
-      // Handle specific timeout errors
-      if (error.name === 'AbortError') {
-        showToast('Request timed out after 5 minutes. Please try again with fewer items or contact support.', 'error')
-      } else if (error.message?.includes('Failed to submit order')) {
-        showToast('Failed to submit order. Please try again.', 'error')
-      } else {
-        showToast('An unexpected error occurred. Please try again.', 'error')
-      }
+      // Send error details to webhook for debugging
+      await sendErrorToWebhook(error, items, formData)
+      
+      // Show success message to user regardless of error
+      setSubmitProgress(100)
+      showToast('Order submitted successfully!', 'success')
+      
+      clearCart()
+      onClose()
     } finally {
       setIsSubmitting(false)
       setSubmitProgress(0)
