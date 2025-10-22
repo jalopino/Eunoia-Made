@@ -126,7 +126,7 @@ export const colorOptions: ColorOption[] = [
   { name: 'Cotton White', value: '#FFFFFF' },
   { name: 'Black', value: '#000000' },
   { name: 'Fossil Grey', value: '#C8C8C8' },
-  { name: 'Charcoal Black', value: '#36454F' },
+  // { name: 'Charcoal Black', value: '#36454F' },
   { name: 'Earth Brown', value: '#8B4513' },
   { name: 'Army Brown', value: '#5F4B32' },
   { name: 'Wood Brown', value: '#966F33' },
