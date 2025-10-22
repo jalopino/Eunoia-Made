@@ -24,7 +24,7 @@ export default function LoadingOverlay({ isLoading, progress = 0 }: LoadingOverl
 
   return (
     <div 
-      className={`fixed inset-0 bg-white backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-500 ${isLoading ? 'opacity-100' : 'opacity-0'}`}
+      className={`absolute inset-0 bg-white backdrop-blur-sm z-50 flex items-center justify-center transition-opacity duration-500 ${isLoading ? 'opacity-100' : 'opacity-0'}`}
     >
       <div className="relative flex flex-col items-center gap-8">
         {/* Logo */}
