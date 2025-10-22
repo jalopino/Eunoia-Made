@@ -3,6 +3,7 @@
 import { useRef, useMemo, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Center, Text3D } from '@react-three/drei'
+import LoadingOverlay from './LoadingOverlay'
 import * as THREE from 'three'
 import { KeychainParameters } from '@/types/keychain'
 import { TTFLoader } from 'three-stdlib'
@@ -559,27 +560,7 @@ export default function RoundedKeychainViewer({ parameters, commitId = 0 }: Roun
           />
         </Canvas>
 
-        {/* Non-blocking loading indicator */}
-        {isBuilding && (
-          <div className="absolute top-4 right-4 z-10">
-            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
-              {/* Moving circle animation */}
-              <div className="relative w-6 h-6">
-                {/* Outer rotating circle */}
-                <div className="absolute inset-0 border-2 border-gray-200 rounded-full"></div>
-                <div className="absolute inset-0 border-2 border-transparent border-t-brand-blue border-r-brand-green rounded-full animate-spin"></div>
-                
-                {/* Inner pulsing circle */}
-                <div className="absolute inset-1 border border-transparent border-t-brand-yellow border-r-brand-red rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-              </div>
-
-              {/* Loading text */}
-              <div className="text-xs font-medium text-gray-600">
-                {buildProgress < 100 ? 'Loading...' : 'Ready!'}
-              </div>
-            </div>
-          </div>
-        )}
+        <LoadingOverlay isLoading={isBuilding} progress={buildProgress} />
       </div>
       
       <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
