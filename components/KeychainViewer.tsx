@@ -557,7 +557,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
       </mesh>
 
       {/* Raised or engraved 3D text from glyphs */}
-      {parameters.textHeight !== 0 && textGeomState && (
+      {parameters.showText && parameters.textHeight !== 0 && textGeomState && (
         <mesh
           geometry={textGeomState}
           position={[0, 0, parameters.textHeight > 0 ? parameters.borderHeight : Math.max(0, parameters.borderHeight - Math.abs(parameters.textHeight))]}
@@ -567,7 +567,7 @@ function KeychainMesh({ parameters, onBuildingChange, onProgressChange }: { para
       )}
 
       {/* Fallback: Text3D using helvetiker if glyph text failed */}
-      {parameters.textHeight !== 0 && !textGeomState && (
+      {parameters.showText && parameters.textHeight !== 0 && !textGeomState && (
         <Center position={[0, 0, parameters.borderHeight]}>
           {parameters.line2 ? (
             <>

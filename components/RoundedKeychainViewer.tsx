@@ -432,7 +432,7 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
       )}
 
       {/* Extruded 3D text */}
-      {parameters.textHeight !== 0 && textGeomState && (
+      {parameters.showText && parameters.textHeight !== 0 && textGeomState && (
         <mesh
           geometry={textGeomState}
           position={[0, 0, parameters.textHeight > 0 ? parameters.borderHeight : Math.max(0, parameters.borderHeight - Math.abs(parameters.textHeight))]}
@@ -442,7 +442,7 @@ function RoundedKeychainMesh({ parameters, onBuildingChange, onProgressChange }:
       )}
 
       {/* Fallback: Text3D using font if glyph text failed */}
-      {parameters.textHeight !== 0 && !textGeomState && (
+      {parameters.showText && parameters.textHeight !== 0 && !textGeomState && (
         <Center position={[0, 0, parameters.borderHeight]}>
           {parameters.line2 ? (
             <>

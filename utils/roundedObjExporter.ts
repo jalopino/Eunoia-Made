@@ -183,7 +183,7 @@ export async function exportRoundedKeychainOBJ(parameters: KeychainParameters, m
   let measuredWidth = 0
   let measuredHeight = 0
 
-  if (parameters.textHeight !== 0) {
+  if (parameters.showText && parameters.textHeight !== 0) {
     if (line1Shapes.length) {
       const g1 = new THREE.ExtrudeGeometry(line1Shapes, { 
         depth: Math.abs(parameters.textHeight), 

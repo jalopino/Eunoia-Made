@@ -202,6 +202,20 @@ export default function RoundedParameterControls({
         {activeTab === 'text' && (
           <div className="space-y-4">
             <div className="input-group">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={parameters.showText}
+                  onChange={(e) => onParameterChange('showText', e.target.checked)}
+                  className="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                />
+                <span className="ml-2 text-sm font-medium text-gray-700">Show Text</span>
+              </label>
+            </div>
+
+            {parameters.showText && (
+              <>
+                <div className="input-group">
               <label htmlFor="line1" className="text-sm font-medium text-gray-700">
                 First Line:
               </label>
@@ -351,6 +365,8 @@ export default function RoundedParameterControls({
                   <span className="value-display">{parameters.borderHeight}mm</span>
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         )}

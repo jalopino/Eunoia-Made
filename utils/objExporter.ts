@@ -107,7 +107,7 @@ export async function exportOBJ(parameters: KeychainParameters, mtlFileName = 'k
   const line2Shapes = parameters.line2 ? font.generateShapes(parameters.line2, line2Size) : []
 
   const textGeoms: THREE.BufferGeometry[] = []
-  if (parameters.textHeight !== 0) {
+  if (parameters.showText && parameters.textHeight !== 0) {
     if (line1Shapes.length) {
       const g1 = new THREE.ExtrudeGeometry(line1Shapes, { 
         depth: Math.abs(parameters.textHeight), 

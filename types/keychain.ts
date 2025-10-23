@@ -1,5 +1,6 @@
 export interface KeychainParameters {
   // Text settings
+  showText: boolean
   line1: string
   line2: string
   font: string
@@ -41,6 +42,7 @@ export interface KeychainParameters {
 
 export const defaultParameters: KeychainParameters = {
   // Text settings
+  showText: true,
   line1: 'Eunoia',
   line2: 'Made',
   font: 'Rethink',
@@ -82,6 +84,7 @@ export const defaultParameters: KeychainParameters = {
 
 export const roundedDefaultParameters: KeychainParameters = {
   // Text settings
+  showText: true,
   line1: 'Eunoia Made',
   line2: '',
   font: 'Rethink',

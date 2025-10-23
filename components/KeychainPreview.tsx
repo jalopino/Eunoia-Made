@@ -876,7 +876,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           )}
 
           {/* Extruded 3D text */}
-          {keychainParameters.textHeight !== 0 && textGeomState && (
+          {keychainParameters.showText && keychainParameters.textHeight !== 0 && textGeomState && (
             <mesh
               geometry={textGeomState}
               position={[0, 0, keychainParameters.textHeight > 0 ? keychainParameters.borderHeight : Math.max(0, keychainParameters.borderHeight - Math.abs(keychainParameters.textHeight))]}
@@ -886,7 +886,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           )}
 
           {/* Fallback: Text3D using font if glyph text failed */}
-          {keychainParameters.textHeight !== 0 && !textGeomState && (
+          {keychainParameters.showText && keychainParameters.textHeight !== 0 && !textGeomState && (
           <Center position={[0, 0, keychainParameters.borderHeight]}>
               {keychainParameters.line2 ? (
                 <>
@@ -944,7 +944,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           )}
 
           {/* Raised or engraved 3D text from glyphs */}
-          {keychainParameters.textHeight !== 0 && textGeomState && (
+          {keychainParameters.showText && keychainParameters.textHeight !== 0 && textGeomState && (
             <mesh
               geometry={textGeomState}
               position={[0, 0, keychainParameters.textHeight > 0 ? keychainParameters.borderHeight : Math.max(0, keychainParameters.borderHeight - Math.abs(keychainParameters.textHeight))]}
@@ -954,7 +954,7 @@ function PreviewKeychainMesh({ type, parameters, onLoadingChange, onProgressChan
           )}
 
           {/* Fallback: Text3D using helvetiker if glyph text failed */}
-          {keychainParameters.textHeight !== 0 && !textGeomState && (
+          {keychainParameters.showText && keychainParameters.textHeight !== 0 && !textGeomState && (
             <Center position={[0, 0, keychainParameters.borderHeight]}>
               {keychainParameters.line2 ? (
                 <>
