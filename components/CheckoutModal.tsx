@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { X } from 'lucide-react'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
@@ -248,6 +248,20 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const getTotalItems = () => {
     return items.reduce((total, item) => total + item.quantity, 0)
   }
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    // Cleanup function to restore scroll when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
